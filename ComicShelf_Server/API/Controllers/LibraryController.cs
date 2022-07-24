@@ -1,4 +1,5 @@
 using API.Interfaces;
+using Infra.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Models;
@@ -12,13 +13,13 @@ public class LibraryController : ControllerBase
 {
     private readonly IOptions<LibrariesConfig> _libraryConfig;
     private readonly IFileRepository _fileRepository;
-    
+
     public LibraryController(IOptions<LibrariesConfig> libraryConfig, IFileRepository fileRepository)
     {
         _libraryConfig = libraryConfig;
         _fileRepository = fileRepository;
     }
-    
+
     // [HttpPost]
     // public IActionResult InitializeLibraries()
     // {
@@ -64,15 +65,16 @@ public class LibraryController : ControllerBase
     public IActionResult ScanLibrary()
     {
         var libraries = _libraryConfig.Value.Libraries.ToList();
-        
+
         try
         {
+            var newFilesCount = 0;
             var library = libraries[0];
             var sourceDirectory = library.Path;
             var searchPatterns = library.AcceptedExtensions.Select(x => $"*.{x}");
-            var files = new List<File>();
-            
-            var enumerateFiles = searchPatterns.AsParallel().SelectMany(searchPattern => Directory.EnumerateFiles(sourceDirectory, searchPattern, SearchOption.AllDirectories));
+
+            var enumerateFiles = searchPatterns.AsParallel().SelectMany(searchPattern =>
+                Directory.EnumerateFiles(sourceDirectory, searchPattern, SearchOption.AllDirectories));
 
             foreach (var currentFile in enumerateFiles)
             {
@@ -82,17 +84,19 @@ public class LibraryController : ControllerBase
                 file.Name = fileInfo.Name;
                 file.Path = fileInfo.DirectoryName;
                 file.Extension = Path.GetExtension(currentFile);
+                file.MimeType = FileHelpers.GetMimeTypeFromExtension(file.Extension);
                 file.Size = fileInfo.Length;
+                file.AddedAt = DateTime.Now;
                 file.LastModifiedDate = fileInfo.LastWriteTime;
 
-                files.Add(file);
-                
-                _fileRepository.Save(file);
+                if (_fileRepository.GetFileByName(file.Name) == null)
+                {
+                    _fileRepository.Save(file);
+                    newFilesCount++;
+                }
             }
 
-            var savedFiles = _fileRepository.ReturnFiles();
-
-            return Ok(files);
+            return Ok(newFilesCount == 0 ? "No new file added" : $"{newFilesCount} new files added");
         }
         catch (Exception e)
         {

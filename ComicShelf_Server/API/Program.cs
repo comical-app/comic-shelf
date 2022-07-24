@@ -16,7 +16,19 @@ builder.Services.AddDbContext<DatabaseContext>(options => options.UseSqlite(buil
 builder.Services.Configure<LibrariesConfig>(builder.Configuration.GetSection("LibrariesConfig"));
 builder.Services.AddTransient<IFileRepository, FileRepository>();
 
+// using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+// {
+//     var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+//     context.Database.Migrate();
+// }
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+    context.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

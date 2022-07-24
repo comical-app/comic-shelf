@@ -1,5 +1,6 @@
 using API.Context;
 using API.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using File = Models.File;
 
 namespace API.Repositories;
@@ -13,13 +14,38 @@ public class FileRepository : IFileRepository
         _context = context;
     }
 
-    public void Save(File file)
+    public async Task Save(File? file)
     {
         try
         {
-            using var db = _context;
-            db.Add(file);
-            db.SaveChanges();
+            var checkExistentFile = _context.Files.FirstOrDefault(x => x.Name == file.Name);
+            if (checkExistentFile != null) return;
+            _context.Files.Add(file);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message, e);
+        }
+    }
+
+    public async Task<File?> GetFileByName(string name)
+    {
+        try
+        {
+            return await _context.Files.FirstOrDefaultAsync(x => x.Name == name);
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message, e);
+        }
+    }
+
+    public async Task<File?> GetFileById(Guid id)
+    {
+        try
+        {
+            return await _context.Files.FirstOrDefaultAsync(x => x.Id == id);
         }
         catch (Exception e)
         {
@@ -31,8 +57,7 @@ public class FileRepository : IFileRepository
     {
         try
         {
-            using var db = _context;
-            var files = db.Files.OrderBy(x => x.LastModifiedDate);
+            var files = _context.Files.OrderBy(x => x.LastModifiedDate);
 
             return files;
         }
