@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import {FileModule} from "./file/file.module";
 import {ConfigModule} from "./config/config.module";
 import {LibraryModule} from "./library/library.module";
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import {LibraryModule} from "./library/library.module";
     AppRoutingModule,
     FileModule,
     ConfigModule,
-    LibraryModule
+    LibraryModule,
+    NgbModule
   ],
   providers: [],
   bootstrap: [AppComponent]
