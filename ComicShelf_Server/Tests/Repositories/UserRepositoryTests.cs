@@ -611,41 +611,31 @@ public class UserRepositoryTests
             // Arrange
 
             // Create admin user
-            var user1 = new User
+            var user1 = new CreateUserRequest
             {
-                Id = _userId,
                 Username = _username,
                 Password = _password,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
                 IsAdmin = _isAdmin,
-                LastLogin = DateTime.Now,
                 CanAccessOpds = _canAccessOpds
             };
-            await _dbContext.Users.AddAsync(user1);
+            await _userRepository.CreateUserAsync(user1);
 
             // Create regular user
-            var user2 = new User
+            var user2 = new CreateUserRequest
             {
-                Id = Guid.NewGuid(),
                 Username = "UserRegular",
                 Password = "123456",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
                 IsAdmin = true,
-                LastLogin = DateTime.Now,
                 CanAccessOpds = false
             };
-            await _dbContext.Users.AddAsync(user2);
+            await _userRepository.CreateUserAsync(user2);
 
             await _dbContext.SaveChangesAsync();
 
             var loginForm = new LoginUserRequest
             {
-                Username = "UserAdmin",
-                Password = "12345"
+                Username = _username,
+                Password = _password
             };
 
             // Act
@@ -655,9 +645,7 @@ public class UserRepositoryTests
             result.Should().NotBeNull();
             if (result != null)
             {
-                result.Id.Should().Be(_userId);
                 result.Username.Should().Be(_username);
-                result.Password.Should().Be(_password);
                 result.IsActive.Should().BeTrue();
                 result.IsAdmin.Should().Be(_isAdmin);
                 result.CanAccessOpds.Should().Be(_canAccessOpds);
@@ -1028,26 +1016,21 @@ public class UserRepositoryTests
         public async Task Should_change_password_when_user_exists()
         {
             // Arrange
-            var user = new User
+            var user = new CreateUserRequest
             {
-                Id = _userId,
                 Username = "UserRegular",
                 Password = _oldPassword,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
                 IsAdmin = true,
-                LastLogin = DateTime.Now,
                 CanAccessOpds = false
             };
-            await _dbContext.Users.AddAsync(user);
+            var createdUser = await _userRepository.CreateUserAsync(user);
 
             await _dbContext.SaveChangesAsync();
             
             const string newPassword = "987654321";
 
             // Act
-            var result = await _userRepository.ChangePasswordAsync(_userId, _oldPassword, newPassword, newPassword);
+            var result = await _userRepository.ChangePasswordAsync(createdUser.Id, _oldPassword, newPassword, newPassword);
 
             // Assert
             result.Should().BeTrue();
