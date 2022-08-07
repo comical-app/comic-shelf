@@ -1,3 +1,4 @@
+using API.Domain.Commands;
 using API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Models;
@@ -20,7 +21,7 @@ public class UserController : ControllerBase
     [HttpGet("{id:guid}")]
     public IActionResult Get(Guid id)
     {
-        var user = _userRepository.GetUserAsync(id);
+        var user = _userRepository.GetUserByIdAsync(id);
         
         if (user == null)
             return NotFound();
@@ -40,12 +41,12 @@ public class UserController : ControllerBase
     }
     
     [HttpPost]
-    public IActionResult Post([FromBody] User user)
+    public IActionResult Post([FromBody] CreateUserRequest user)
     {
         if (user == null)
             return BadRequest();
         
-        _userRepository.CreateUserAsync(user.Username, user.Password, user.IsAdmin, user.CanAccessOpds);
+        _userRepository.CreateUserAsync(user);
         
         return Ok(user);
     }
@@ -56,7 +57,7 @@ public class UserController : ControllerBase
         if (user == null)
             return BadRequest();
         
-        var checkUser = _userRepository.GetUserAsync(user.Id);
+        var checkUser = _userRepository.GetUserByIdAsync(user.Id);
         
         if (checkUser == null)
             return NotFound();
@@ -69,7 +70,7 @@ public class UserController : ControllerBase
     [HttpDelete("{id:guid}")]
     public IActionResult Delete(Guid id)
     {
-        var user = _userRepository.GetUserAsync(id);
+        var user = _userRepository.GetUserByIdAsync(id);
         
         if (user == null)
             return NotFound();

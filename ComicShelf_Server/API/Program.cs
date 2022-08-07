@@ -15,12 +15,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DatabaseContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DatabaseContext")));
 builder.Services.Configure<LibrariesConfig>(builder.Configuration.GetSection("LibrariesConfig"));
 builder.Services.AddTransient<IFileRepository, FileRepository>();
-
-// using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-// {
-//     var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-//     context.Database.Migrate();
-// }
+builder.Services.AddTransient<IUserRepository, UserRepository>();
+builder.Services.AddTransient<ILibraryRepository, LibraryRepository>();
 
 var app = builder.Build();
 

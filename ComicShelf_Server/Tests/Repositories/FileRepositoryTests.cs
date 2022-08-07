@@ -66,13 +66,137 @@ public class FileRepositoryTests
     [TestFixture]
     public class GetFileByNameAsync
     {
-        
+        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
+        private DatabaseContext _dbContext;
+        private IFileRepository _fileRepository;
+        private readonly Guid _fileId;
+
+        public GetFileByNameAsync()
+        {
+            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
+                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
+                .Options;
+            
+            _fileId = Guid.NewGuid();
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            _dbContext = new DatabaseContext(_dbContextOptions);
+            _fileRepository = new FileRepository(_dbContext);
+        }
+
+        [Test]
+        public async Task Should_return_valid_file()
+        {
+            // Arrange
+            var file = new File
+            {
+                Id = _fileId,
+                Name = "file1.cbz",
+                Path = @"C:\Library 1\file1.cbz",
+                Extension = "cbz",
+                MimeType = "application/x-cbz",
+                Size = 100
+            };
+            await _dbContext.Files.AddAsync(file);
+
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _fileRepository.GetFileByNameAsync(file.Name);
+
+            // Assert
+            result.Should().NotBeNull();
+            if (result != null)
+            {
+                result.Id.Should().Be(_fileId);
+                result.Name.Should().Be(file.Name);
+                result.Path.Should().Be(file.Path);
+                result.Extension.Should().Be(file.Extension);
+                result.MimeType.Should().Be(file.MimeType);
+                result.Size.Should().Be(file.Size);
+            }
+        }
+
+        [Test]
+        public async Task Should_return_null_when_file_not_found()
+        {
+            // Act
+            var result = await _fileRepository.GetFileByNameAsync("Testing name");
+
+            // Assert
+            result.Should().BeNull();
+        }
     }
 
     [TestFixture]
     public class GetFileByIdAsync
     {
-        
+        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
+        private DatabaseContext _dbContext;
+        private IFileRepository _fileRepository;
+        private readonly Guid _fileId;
+
+        public GetFileByIdAsync()
+        {
+            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
+                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
+                .Options;
+            
+            _fileId = Guid.NewGuid();
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            _dbContext = new DatabaseContext(_dbContextOptions);
+            _fileRepository = new FileRepository(_dbContext);
+        }
+
+        [Test]
+        public async Task Should_return_valid_file()
+        {
+            // Arrange
+            var file = new File
+            {
+                Id = _fileId,
+                Name = "file1.cbz",
+                Path = @"C:\Library 1\file1.cbz",
+                Extension = "cbz",
+                MimeType = "application/x-cbz",
+                Size = 100
+            };
+            await _dbContext.Files.AddAsync(file);
+
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _fileRepository.GetFileByIdAsync(_fileId);
+
+            // Assert
+            result.Should().NotBeNull();
+            if (result != null)
+            {
+                result.Id.Should().Be(_fileId);
+                result.Name.Should().Be(file.Name);
+                result.Path.Should().Be(file.Path);
+                result.Extension.Should().Be(file.Extension);
+                result.MimeType.Should().Be(file.MimeType);
+                result.Size.Should().Be(file.Size);
+            }
+        }
+
+        [Test]
+        public async Task Should_return_null_when_file_not_found()
+        {
+            // Act
+            var result = await _fileRepository.GetFileByIdAsync(Guid.NewGuid());
+
+            // Assert
+            result.Should().BeNull();
+        }
     }
 
     [TestFixture]

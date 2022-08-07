@@ -1,4 +1,5 @@
 using API.Context;
+using API.Domain.Commands;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -24,7 +25,7 @@ public class UserRepository : IUserRepository
         return await _context.Users.Where(x => x.CanAccessOpds).ToListAsync();
     }
 
-    public async Task<User?> GetUserAsync(Guid id)
+    public async Task<User?> GetUserByIdAsync(Guid id)
     {
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         return user ?? null;
@@ -37,34 +38,38 @@ public class UserRepository : IUserRepository
         return user != null;
     }
 
-    public async Task<User> CreateUserAsync(string username, string password, bool isAdmin = false,
-        bool canAccessOpds = false)
+    public async Task<User> CreateUserAsync(CreateUserRequest user)
     {
-        if (string.IsNullOrWhiteSpace(username)) throw new ArgumentException("Username cannot be empty");
+        if (string.IsNullOrWhiteSpace(user.Username)) throw new ArgumentException("Username cannot be empty");
 
-        if (string.IsNullOrWhiteSpace(password)) throw new ArgumentException("Password cannot be empty");
+        if (string.IsNullOrWhiteSpace(user.Password)) throw new ArgumentException("Password cannot be empty");
 
-        if (await CheckIfUsernameExistsAsync(username)) throw new Exception("Username already exists");
+        if (await CheckIfUsernameExistsAsync(user.Username)) throw new Exception("Username already exists");
 
-        var user = new User
+        var newUser = new User
         {
-            Username = username.Trim(),
-            Password = password,
-            IsAdmin = isAdmin,
-            CanAccessOpds = canAccessOpds,
+            Username = user.Username.Trim(),
+            Password = user.Password,
+            IsAdmin = user.IsAdmin,
+            CanAccessOpds = user.CanAccessOpds,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now,
             IsActive = true
         };
-        await _context.Users.AddAsync(user);
+        await _context.Users.AddAsync(newUser);
         await _context.SaveChangesAsync();
-        return await Task.FromResult(user);
+        return await Task.FromResult(newUser);
     }
 
     public async Task<bool> UpdateUserAsync(User user)
     {
         var userToEdit = await _context.Users.FirstOrDefaultAsync(x => x.Id == user.Id);
         if (userToEdit == null) return false;
+
+        if (user.Username != userToEdit.Username)
+        {
+            if (await CheckIfUsernameExistsAsync(user.Username)) throw new Exception("Username already exists");
+        }
 
         userToEdit.Username = user.Username.Trim();
         userToEdit.IsActive = user.IsActive;

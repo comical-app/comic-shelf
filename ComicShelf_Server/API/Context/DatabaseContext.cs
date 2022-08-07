@@ -11,6 +11,7 @@ public class DatabaseContext : DbContext
     { }
     
     // public DbSet<ComicFile> ComicFiles { get; set; }
+    public DbSet<Library> Libraries { get; set; }
     public DbSet<File> Files { get; set; }
     public DbSet<User> Users { get; set; }
     // public DbSet<Library> Libraries { get; set; }

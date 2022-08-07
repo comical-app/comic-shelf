@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using API.Context;
+using API.Domain.Commands;
 using API.Interfaces;
 using API.Repositories;
 using FluentAssertions;
@@ -142,7 +143,7 @@ public class UserRepositoryTests
     }
 
     [TestFixture]
-    public class GetUserAsync
+    public class GetUserByIdAsync
     {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
@@ -152,7 +153,7 @@ public class UserRepositoryTests
         private readonly DateTime _updatedAt;
         private readonly DateTime _lastLogin;
 
-        public GetUserAsync()
+        public GetUserByIdAsync()
         {
             _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
                 .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
@@ -191,27 +192,29 @@ public class UserRepositoryTests
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var users = await _userRepository.ListUsersAsync();
-            var result = await _userRepository.GetUserAsync(_userId);
+            var result = await _userRepository.GetUserByIdAsync(_userId);
 
             // Assert
             result.Should().NotBeNull();
-            result.Id.Should().Be(_userId);
-            result.Username.Should().Be("UserAdmin");
-            result.Password.Should().Be("12345");
-            result.CreatedAt.Should().Be(_createdAt);
-            result.UpdatedAt.Should().Be(_updatedAt);
-            result.IsActive.Should().BeTrue();
-            result.IsAdmin.Should().BeTrue();
-            result.LastLogin.Should().Be(_lastLogin);
-            result.CanAccessOpds.Should().BeTrue();
+            if (result != null)
+            {
+                result.Id.Should().Be(_userId);
+                result.Username.Should().Be("UserAdmin");
+                result.Password.Should().Be("12345");
+                result.CreatedAt.Should().Be(_createdAt);
+                result.UpdatedAt.Should().Be(_updatedAt);
+                result.IsActive.Should().BeTrue();
+                result.IsAdmin.Should().BeTrue();
+                result.LastLogin.Should().Be(_lastLogin);
+                result.CanAccessOpds.Should().BeTrue();
+            }
         }
 
         [Test]
         public async Task Should_return_null_when_user_not_found()
         {
             // Act
-            var result = await _userRepository.GetUserAsync(Guid.NewGuid());
+            var result = await _userRepository.GetUserByIdAsync(Guid.NewGuid());
 
             // Assert
             result.Should().BeNull();
@@ -338,25 +341,27 @@ public class UserRepositoryTests
         public async Task Should_create_user()
         {
             // Arrange
-            const string username = "UserAdmin";
-            const string password = "12345";
-            const bool isAdmin = true;
-            const bool canAccessOpds = true;
-
+            var newUser = new CreateUserRequest()
+            {
+                Username = "UserAdmin",
+                Password = "12345",
+                IsAdmin = true,
+                CanAccessOpds = true
+            };
 
             // Act
-            var user = await _userRepository.CreateUserAsync(username, password, isAdmin, canAccessOpds);
-            var result = await _userRepository.GetUserAsync(user.Id);
+            var user = await _userRepository.CreateUserAsync(newUser);
+            var result = await _userRepository.GetUserByIdAsync(user.Id);
 
             // Assert
             result.Should().NotBeNull();
             if (result != null)
             {
                 result.Id.Should().Be(user.Id);
-                result.Username.Should().Be(username);
-                result.Password.Should().Be(password);
-                result.IsAdmin.Should().Be(isAdmin);
-                result.CanAccessOpds.Should().Be(canAccessOpds);
+                result.Username.Should().Be(newUser.Username);
+                result.Password.Should().Be(newUser.Password);
+                result.IsAdmin.Should().Be(newUser.IsAdmin);
+                result.CanAccessOpds.Should().Be(newUser.CanAccessOpds);
                 result.IsActive.Should().BeTrue();
             }
         }
@@ -378,12 +383,19 @@ public class UserRepositoryTests
             };
             await _dbContext.Users.AddAsync(user);
             await _dbContext.SaveChangesAsync();
+            
+            var newUser = new CreateUserRequest()
+            {
+                Username = user.Username,
+                Password = user.Password,
+                IsAdmin = true,
+                CanAccessOpds = true
+            };
 
             // Act
             Func<Task> result = async () =>
             {
-                await _userRepository.CreateUserAsync(user.Username, user.Password, user.IsAdmin,
-                    user.CanAccessOpds);
+                await _userRepository.CreateUserAsync(newUser);
             };
 
             // Assert
@@ -394,7 +406,7 @@ public class UserRepositoryTests
         public async Task Should_throw_exception_when_user_is_null()
         {
             // Act
-            Func<Task> result = async () => { await _userRepository.CreateUserAsync(null, null, false, false); };
+            Func<Task> result = async () => { await _userRepository.CreateUserAsync(null); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -460,7 +472,7 @@ public class UserRepositoryTests
 
             // Act
             await _userRepository.UpdateUserAsync(user);
-            var result = await _userRepository.GetUserAsync(user.Id);
+            var result = await _userRepository.GetUserByIdAsync(user.Id);
 
             // Assert
             result.Should().NotBeNull();
@@ -555,7 +567,7 @@ public class UserRepositoryTests
         {
             // Act
             await _userRepository.DeleteUserAsync(_userId);
-            var result = await _userRepository.GetUserAsync(_userId);
+            var result = await _userRepository.GetUserByIdAsync(_userId);
 
             // Assert
             result.Should().BeNull();

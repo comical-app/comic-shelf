@@ -15,7 +15,8 @@ public class LibraryController : ControllerBase
     private readonly IFileRepository _fileRepository;
     private readonly ILogger<LibraryController> _logger;
 
-    public LibraryController(IOptions<LibrariesConfig> libraryConfig, IFileRepository fileRepository, ILogger<LibraryController> logger)
+    public LibraryController(IOptions<LibrariesConfig> libraryConfig, IFileRepository fileRepository,
+        ILogger<LibraryController> logger)
     {
         _libraryConfig = libraryConfig;
         _fileRepository = fileRepository;
@@ -91,7 +92,7 @@ public class LibraryController : ControllerBase
                 file.LastModifiedDate = fileInfo.LastWriteTime;
 
                 if (await _fileRepository.GetFileByNameAsync(file.Name) != null) continue;
-                
+
                 await _fileRepository.SaveAsync(file);
                 newFilesCount++;
             }

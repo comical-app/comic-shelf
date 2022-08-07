@@ -1,3 +1,4 @@
+using API.Domain.Commands;
 using Models;
 
 namespace API.Interfaces;
@@ -8,11 +9,11 @@ public interface IUserRepository
 
     Task<IEnumerable<User>> ListUsersWithOpdsAccessAsync();
 
-    Task<User?> GetUserAsync(Guid id);
+    Task<User?> GetUserByIdAsync(Guid id);
     
     Task<bool> CheckIfUsernameExistsAsync(string username);
     
-    Task<User> CreateUserAsync(string username, string password, bool isAdmin, bool canAccessOpds);
+    Task<User> CreateUserAsync(CreateUserRequest user);
     
     Task<bool> UpdateUserAsync(User user);
     

@@ -10,5 +10,5 @@ public class Library
     
     public DateTime LastScan { get; set; }
     
-    public IEnumerable<string> AcceptedExtensions { get; set; }
+    public string AcceptedExtensions { get; set; }
 }
