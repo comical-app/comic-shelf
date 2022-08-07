@@ -64,7 +64,7 @@ public class LibraryController : ControllerBase
     //     return Ok($"Library {id} deleted");
     // }
 
-    [HttpGet(Name = "scan-library")]
+    [HttpGet("scan-library")]
     public async Task<IActionResult> ScanLibrary()
     {
         var libraries = _libraryConfig.Value.Libraries.ToList();

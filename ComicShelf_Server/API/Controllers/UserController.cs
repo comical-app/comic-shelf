@@ -1,7 +1,6 @@
 using API.Domain.Commands;
 using API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Models;
 
 namespace API.Controllers;
 

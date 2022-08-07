@@ -2,16 +2,24 @@ using API.Context;
 using API.Interfaces;
 using API.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using Models;
 
 var builder = WebApplication.CreateBuilder(args);
+const string serviceName = "ComicShelf";
 
 // Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = serviceName, Version = "v1" });
+
+    var filePath = Path.Combine(AppContext.BaseDirectory, "Api.xml");
+    c.IncludeXmlComments(filePath);
+});
 builder.Services.AddDbContext<DatabaseContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DatabaseContext")));
 builder.Services.Configure<LibrariesConfig>(builder.Configuration.GetSection("LibrariesConfig"));
 builder.Services.AddTransient<IFileRepository, FileRepository>();
