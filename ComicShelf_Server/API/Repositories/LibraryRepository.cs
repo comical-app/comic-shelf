@@ -57,9 +57,11 @@ public class LibraryRepository : ILibraryRepository
         return await Task.FromResult(newLibrary);
     }
 
-    public async Task<bool> UpdateLibraryAsync(UpdateLibraryRequest library)
+    public async Task<bool> UpdateLibraryAsync(Guid libraryId, UpdateLibraryRequest library)
     {
-        var libraryToEdit = await _context.Libraries.FirstOrDefaultAsync(x => x.Id == library.Id);
+        if (library == null) throw new Exception("Library cannot be null");
+        
+        var libraryToEdit = await _context.Libraries.FirstOrDefaultAsync(x => x.Id == libraryId);
         if (libraryToEdit == null) return false;
 
         if (library.Name != libraryToEdit.Name)

@@ -458,15 +458,14 @@ public class UserRepositoryTests
             
             var user = new UpdateUserRequest
             {
-                Id = _userId,
                 Username = "UserAdminXYZ",
                 IsAdmin = true,
                 CanAccessOpds = true
             };
 
             // Act
-            await _userRepository.UpdateUserAsync(user);
-            var result = await _userRepository.GetUserByIdAsync(user.Id);
+            await _userRepository.UpdateUserAsync(_userId, user);
+            var result = await _userRepository.GetUserByIdAsync(_userId);
 
             // Assert
             result.Should().NotBeNull();
@@ -485,7 +484,7 @@ public class UserRepositoryTests
         public async Task Should_throw_exception_when_user_is_null()
         {
             // Act
-            Func<Task> result = async () => { await _userRepository.UpdateUserAsync(null); };
+            Func<Task> result = async () => { await _userRepository.UpdateUserAsync(_userId, null); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -497,14 +496,13 @@ public class UserRepositoryTests
             // Arrange
             var user = new UpdateUserRequest
             {
-                Id = Guid.NewGuid(),
                 Username = "UserAdminXYZ",
                 IsAdmin = true,
                 CanAccessOpds = true
             };
 
             // Act
-            var result =  await _userRepository.UpdateUserAsync(user);
+            var result =  await _userRepository.UpdateUserAsync(Guid.NewGuid(), user);
 
             // Assert
             result.Should().BeFalse();
@@ -881,10 +879,15 @@ public class UserRepositoryTests
 
             await _dbContext.SaveChangesAsync();
             
-            const string newPassword = "987654321";
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = _userId,
+                NewPassword = "987654321",
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
-            var result = await _userRepository.ResetPasswordAsync(_userId, newPassword, newPassword);
+            var result = await _userRepository.ResetPasswordAsync(resetPasswordForm);
 
             // Assert
             result.Should().BeTrue();
@@ -894,10 +897,15 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_user_does_not_exist()
         {
             // Arrange
-            const string newPassword = "987654321";
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = Guid.NewGuid(),
+                NewPassword = "987654321",
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
-            var result = await _userRepository.ResetPasswordAsync(Guid.NewGuid(), newPassword, newPassword);
+            var result = await _userRepository.ResetPasswordAsync(resetPasswordForm);
 
             // Assert
             result.Should().BeFalse();
@@ -907,10 +915,15 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_new_password_is_null()
         {
             // Arrange
-            const string newPassword = null;
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = _userId,
+                NewPassword = null,
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(_userId, newPassword, newPassword); };
+            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -920,10 +933,15 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_new_password_is_empty()
         {
             // Arrange
-            const string newPassword = "";
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = _userId,
+                NewPassword = "",
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(_userId, newPassword, newPassword); };
+            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -933,10 +951,15 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_new_password_is_whitespace()
         {
             // Arrange
-            const string newPassword = " ";
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = _userId,
+                NewPassword = " ",
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(_userId, newPassword, newPassword); };
+            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -946,11 +969,15 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_new_password_is_null_and_confirm_password_is_null()
         {
             // Arrange
-            const string newPassword = null;
-            const string confirmPassword = null;
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = _userId,
+                NewPassword = null,
+                NewPasswordConfirmation = null
+            };
 
             // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(_userId, newPassword, confirmPassword); };
+            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -960,11 +987,15 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_new_password_is_empty_and_confirm_password_is_empty()
         {
             // Arrange
-            const string newPassword = "";
-            const string confirmPassword = "";
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = _userId,
+                NewPassword = "",
+                NewPasswordConfirmation = ""
+            };
 
             // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(_userId, newPassword, confirmPassword); };
+            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -974,12 +1005,16 @@ public class UserRepositoryTests
         public async Task Should_return_exception_when_password_doesnt_match()
         {
             // Arrange
-            const string newPassword1 = "987654321";
-            const string newPassword2 = "987654322";
+            var resetPasswordForm = new ResetUserPasswordRequest
+            {
+                UserId = _userId,
+                NewPassword = "987654321",
+                NewPasswordConfirmation = "987654322"
+            };
 
             // Act
             Func<Task> action = async () =>
-                await _userRepository.ResetPasswordAsync(_userId, newPassword1, newPassword2);
+                await _userRepository.ResetPasswordAsync(resetPasswordForm);
 
             // Assert
             await action.Should().ThrowAsync<Exception>();
@@ -1027,10 +1062,16 @@ public class UserRepositoryTests
 
             await _dbContext.SaveChangesAsync();
             
-            const string newPassword = "987654321";
+            var changePasswordForm = new ChangeUserPasswordRequest
+            {
+                UserId = createdUser.Id,
+                OldPassword = _oldPassword,
+                NewPassword = "987654321",
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
-            var result = await _userRepository.ChangePasswordAsync(createdUser.Id, _oldPassword, newPassword, newPassword);
+            var result = await _userRepository.ChangePasswordAsync(changePasswordForm);
 
             // Assert
             result.Should().BeTrue();
@@ -1040,11 +1081,17 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_user_does_not_exist()
         {
             // Arrange
-            const string newPassword = "987654321";
+            var changePasswordForm = new ChangeUserPasswordRequest
+            {
+                UserId = Guid.NewGuid(),
+                OldPassword = _oldPassword,
+                NewPassword = "987654321",
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
             var result =
-                await _userRepository.ChangePasswordAsync(Guid.NewGuid(), _oldPassword, newPassword, newPassword);
+                await _userRepository.ChangePasswordAsync(changePasswordForm);
 
             // Assert
             result.Should().BeFalse();
@@ -1054,10 +1101,16 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_old_password_is_wrong()
         {
             // Arrange
-            const string newPassword = "987654321";
+            var changePasswordForm = new ChangeUserPasswordRequest
+            {
+                UserId = _userId,
+                OldPassword = "wrong-password",
+                NewPassword = "987654321",
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
-            var result = await _userRepository.ChangePasswordAsync(_userId, "wrong", newPassword, newPassword);
+            var result = await _userRepository.ChangePasswordAsync(changePasswordForm);
 
             // Assert
             result.Should().BeFalse();
@@ -1067,11 +1120,17 @@ public class UserRepositoryTests
         public async Task Should_return_false_when_new_password_is_null()
         {
             // Arrange
-            const string newPassword = null;
+            var changePasswordForm = new ChangeUserPasswordRequest
+            {
+                UserId = _userId,
+                OldPassword = _oldPassword,
+                NewPassword = null,
+                NewPasswordConfirmation = "987654321"
+            };
 
             // Act
             Func<Task> action = async () =>
-                await _userRepository.ChangePasswordAsync(_userId, _oldPassword, newPassword, newPassword);
+                await _userRepository.ChangePasswordAsync(changePasswordForm);
 
             // Assert
             await action.Should().ThrowAsync<Exception>();
@@ -1081,12 +1140,17 @@ public class UserRepositoryTests
         public async Task Should_return_exception_when_password_doesnt_match()
         {
             // Arrange
-            const string newPassword1 = "987654321";
-            const string newPassword2 = "987654322";
+            var changePasswordForm = new ChangeUserPasswordRequest
+            {
+                UserId = _userId,
+                OldPassword = _oldPassword,
+                NewPassword = "987654321",
+                NewPasswordConfirmation = "987654322"
+            };
 
             // Act
             Func<Task> action = async () =>
-                await _userRepository.ChangePasswordAsync(_userId, _oldPassword, newPassword1, newPassword2);
+                await _userRepository.ChangePasswordAsync(changePasswordForm);
 
             // Assert
             await action.Should().ThrowAsync<Exception>();

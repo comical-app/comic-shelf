@@ -15,15 +15,15 @@ public interface IUserRepository
     
     Task<User> CreateUserAsync(CreateUserRequest user);
     
-    Task<bool> UpdateUserAsync(UpdateUserRequest user);
+    Task<bool> UpdateUserAsync(Guid userId, UpdateUserRequest user);
     
     Task<bool> DeleteUserAsync(Guid id);
     
     Task<User?> LoginAsync(LoginUserRequest user);
     
-    Task<bool> ResetPasswordAsync(Guid userId, string newPassword, string newPasswordConfirmation);
+    Task<bool> ResetPasswordAsync(ResetUserPasswordRequest user);
     
-    Task<bool> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, string newPasswordConfirmation);
+    Task<bool> ChangePasswordAsync(ChangeUserPasswordRequest user);
     
     Task<bool> ActivateUserAsync(Guid userId);
     

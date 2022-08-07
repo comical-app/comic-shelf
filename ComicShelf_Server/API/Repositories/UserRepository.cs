@@ -61,9 +61,11 @@ public class UserRepository : IUserRepository
         return await Task.FromResult(newUser);
     }
 
-    public async Task<bool> UpdateUserAsync(UpdateUserRequest user)
+    public async Task<bool> UpdateUserAsync(Guid userId, UpdateUserRequest user)
     {
-        var userToEdit = await _context.Users.FirstOrDefaultAsync(x => x.Id == user.Id);
+        if (user == null) throw new Exception("User cannot be null");
+        
+        var userToEdit = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
         if (userToEdit == null) return false;
 
         if (user.Username != userToEdit.Username)
@@ -104,44 +106,43 @@ public class UserRepository : IUserRepository
         return loggedUser;
     }
 
-    public async Task<bool> ResetPasswordAsync(Guid userId, string newPassword, string newPasswordConfirmation)
+    public async Task<bool> ResetPasswordAsync(ResetUserPasswordRequest user)
     {
-        if (string.IsNullOrWhiteSpace(newPassword)) throw new Exception("New password cannot be empty");
+        if (string.IsNullOrWhiteSpace(user.NewPassword)) throw new Exception("New password cannot be empty");
 
-        if (string.IsNullOrWhiteSpace(newPasswordConfirmation)) throw new Exception("New password confirmation cannot be empty");
+        if (string.IsNullOrWhiteSpace(user.NewPasswordConfirmation)) throw new Exception("New password confirmation cannot be empty");
 
-        if (newPassword != newPasswordConfirmation)throw new Exception("New password and new password confirmation do not match");
+        if (user.NewPassword != user.NewPasswordConfirmation)throw new Exception("New password and new password confirmation do not match");
 
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-        if (user == null) return false;
+        var selectedUser = await _context.Users.FirstOrDefaultAsync(x => x.Id == user.UserId);
+        if (selectedUser == null) return false;
 
-        user.Password = newPassword;
-        user.UpdatedAt = DateTime.Now;
-        _context.Users.Update(user);
+        selectedUser.Password = user.NewPassword;
+        selectedUser.UpdatedAt = DateTime.Now;
+        _context.Users.Update(selectedUser);
 
         await _context.SaveChangesAsync();
         return await Task.FromResult(true);
     }
 
-    public async Task<bool> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword,
-        string newPasswordConfirmation)
+    public async Task<bool> ChangePasswordAsync(ChangeUserPasswordRequest user)
     {
-        if (string.IsNullOrWhiteSpace(oldPassword)) throw new Exception("Old password cannot be empty");
+        if (string.IsNullOrWhiteSpace(user.OldPassword)) throw new Exception("Old password cannot be empty");
 
-        if (string.IsNullOrWhiteSpace(newPassword)) throw new Exception("New password cannot be empty");
+        if (string.IsNullOrWhiteSpace(user.NewPassword)) throw new Exception("New password cannot be empty");
 
-        if (string.IsNullOrWhiteSpace(newPasswordConfirmation)) throw new Exception("New password confirmation cannot be empty");
+        if (string.IsNullOrWhiteSpace(user.NewPasswordConfirmation)) throw new Exception("New password confirmation cannot be empty");
 
-        if (newPassword != newPasswordConfirmation) throw new Exception("New password and new password confirmation do not match");
+        if (user.NewPassword != user.NewPasswordConfirmation) throw new Exception("New password and new password confirmation do not match");
 
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-        if (user == null) return false;
+        var selectedUser = await _context.Users.FirstOrDefaultAsync(x => x.Id == user.UserId);
+        if (selectedUser == null) return false;
         
-        if (!BCrypt.Net.BCrypt.Verify(oldPassword, user.Password)) return false;
+        if (!BCrypt.Net.BCrypt.Verify(user.OldPassword, selectedUser.Password)) return false;
 
-        user.Password = newPassword;
-        user.UpdatedAt = DateTime.Now;
-        _context.Users.Update(user);
+        selectedUser.Password = user.NewPassword;
+        selectedUser.UpdatedAt = DateTime.Now;
+        _context.Users.Update(selectedUser);
 
         await _context.SaveChangesAsync();
         return await Task.FromResult(true);

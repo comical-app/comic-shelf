@@ -1,6 +1,7 @@
 using API.Domain.Commands;
 using API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Models;
 
 namespace API.Controllers;
 
@@ -16,17 +17,30 @@ public class LoginController : ControllerBase
         _userRepository = userRepository;
         _logger = logger;
     }
-    
+
+    /// <summary>
+    /// Login
+    /// </summary>
+    /// <response code="200">User logged</response>
+    /// <response code="500">User or password invalid</response>
+    /// <response code="500">An error occurred while trying to login</response>
     [HttpPost]
+    [ProducesResponseType(typeof(User), 200)]
+    [ProducesResponseType(500)]
     public async Task<IActionResult> LoginAsync([FromBody] LoginUserRequest user)
     {
-        var userLogin = await _userRepository.LoginAsync(user);
-        
-        if (userLogin == null)
+        try
         {
-            return BadRequest(new { message = "User or password invalid" });
+            var userLogin = await _userRepository.LoginAsync(user);
+
+            if (userLogin == null) return BadRequest("User or password invalid");
+
+            return Ok(userLogin);
         }
-        
-        return Ok(userLogin);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return BadRequest("An error occurred while trying to login");
+        }
     }
 }

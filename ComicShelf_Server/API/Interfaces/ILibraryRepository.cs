@@ -15,7 +15,7 @@ public interface ILibraryRepository
 
     Task<Library> CreateLibraryAsync(CreateLibraryRequest library);
     
-    Task<bool> UpdateLibraryAsync(UpdateLibraryRequest library);
+    Task<bool> UpdateLibraryAsync(Guid libraryId, UpdateLibraryRequest library);
     
     Task<bool> DeleteLibraryAsync(Guid id);
 }

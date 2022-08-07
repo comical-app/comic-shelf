@@ -440,15 +440,14 @@ public class LibraryRepositoryTests
             
             var library = new UpdateLibraryRequest
             {
-                Id = _libraryId,
                 Name = "My Comic Library",
                 Path = @"C:\Comics folder",
                 AcceptedExtensions = new []{"7z"}
             };
 
             // Act
-            await _libraryRepository.UpdateLibraryAsync(library);
-            var result = await _libraryRepository.GetLibraryByIdAsync(library.Id);
+            await _libraryRepository.UpdateLibraryAsync(_libraryId, library);
+            var result = await _libraryRepository.GetLibraryByIdAsync(_libraryId);
 
             // Assert
             result.Should().NotBeNull();
@@ -465,7 +464,7 @@ public class LibraryRepositoryTests
         public async Task Should_throw_exception_when_library_is_null()
         {
             // Act
-            Func<Task> result = async () => { await _libraryRepository.UpdateLibraryAsync(null); };
+            Func<Task> result = async () => { await _libraryRepository.UpdateLibraryAsync(_libraryId, null); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -477,14 +476,13 @@ public class LibraryRepositoryTests
             // Arrange
             var library = new UpdateLibraryRequest
             {
-                Id = Guid.NewGuid(),
                 Name = "My Comic Library",
                 Path = @"C:\Comics folder",
                 AcceptedExtensions = new []{"7z"}
             };
 
             // Act
-            var result =  await _libraryRepository.UpdateLibraryAsync(library);
+            var result =  await _libraryRepository.UpdateLibraryAsync(Guid.NewGuid(), library);
 
             // Assert
             result.Should().BeFalse();

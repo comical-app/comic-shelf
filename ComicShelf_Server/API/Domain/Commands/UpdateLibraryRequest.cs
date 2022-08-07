@@ -5,9 +5,6 @@ namespace API.Domain.Commands;
 public class UpdateLibraryRequest
 {
     [Required]
-    public Guid Id { get; set; }
-    
-    [Required]
     [MaxLength(30)]
     public string Name { get; set; }
     
