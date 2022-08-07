@@ -4,11 +4,13 @@ namespace API.Interfaces;
 
 public interface IFileRepository
 {
-    Task Save(File? file);
+    Task<File> SaveAsync(File file);
 
-    Task<File?> GetFileByName(string name);
+    Task<File?> GetFileByNameAsync(string name);
 
-    Task<File?> GetFileById(Guid id);
+    Task<File?> GetFileByIdAsync(Guid id);
 
-    IEnumerable<File> ReturnFiles();
+    Task<IEnumerable<File>> ReturnFilesAsync();
+
+    Task<bool> CheckFileExistsAsync(string filename);
 }

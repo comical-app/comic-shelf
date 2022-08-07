@@ -13,11 +13,13 @@ public class LibraryController : ControllerBase
 {
     private readonly IOptions<LibrariesConfig> _libraryConfig;
     private readonly IFileRepository _fileRepository;
+    private readonly ILogger<LibraryController> _logger;
 
-    public LibraryController(IOptions<LibrariesConfig> libraryConfig, IFileRepository fileRepository)
+    public LibraryController(IOptions<LibrariesConfig> libraryConfig, IFileRepository fileRepository, ILogger<LibraryController> logger)
     {
         _libraryConfig = libraryConfig;
         _fileRepository = fileRepository;
+        _logger = logger;
     }
 
     // [HttpPost]
@@ -62,7 +64,7 @@ public class LibraryController : ControllerBase
     // }
 
     [HttpGet(Name = "scan-library")]
-    public IActionResult ScanLibrary()
+    public async Task<IActionResult> ScanLibrary()
     {
         var libraries = _libraryConfig.Value.Libraries.ToList();
 
@@ -82,18 +84,16 @@ public class LibraryController : ControllerBase
                 var fileInfo = new FileInfo(currentFile);
 
                 file.Name = fileInfo.Name;
-                file.Path = fileInfo.DirectoryName;
+                file.Path = fileInfo.DirectoryName ?? string.Empty;
                 file.Extension = Path.GetExtension(currentFile);
                 file.MimeType = FileHelpers.GetMimeTypeFromExtension(file.Extension);
                 file.Size = fileInfo.Length;
-                file.AddedAt = DateTime.Now;
                 file.LastModifiedDate = fileInfo.LastWriteTime;
 
-                if (_fileRepository.GetFileByName(file.Name) == null)
-                {
-                    _fileRepository.Save(file);
-                    newFilesCount++;
-                }
+                if (await _fileRepository.GetFileByNameAsync(file.Name) != null) continue;
+                
+                await _fileRepository.SaveAsync(file);
+                newFilesCount++;
             }
 
             return Ok(newFilesCount == 0 ? "No new file added" : $"{newFilesCount} new files added");

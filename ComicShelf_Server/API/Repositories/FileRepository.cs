@@ -14,14 +14,16 @@ public class FileRepository : IFileRepository
         _context = context;
     }
 
-    public async Task Save(File? file)
+    public async Task<File> SaveAsync(File file)
     {
         try
         {
-            var checkExistentFile = _context.Files.FirstOrDefault(x => x.Name == file.Name);
-            if (checkExistentFile != null) return;
-            _context.Files.Add(file);
+            if (await CheckFileExistsAsync(file.Name)) throw new Exception("File already exists");
+
+            file.AddedAt = DateTime.Now;
+            await _context.Files.AddAsync(file);
             await _context.SaveChangesAsync();
+            return await Task.FromResult(file);
         }
         catch (Exception e)
         {
@@ -29,7 +31,7 @@ public class FileRepository : IFileRepository
         }
     }
 
-    public async Task<File?> GetFileByName(string name)
+    public async Task<File?> GetFileByNameAsync(string name)
     {
         try
         {
@@ -41,7 +43,7 @@ public class FileRepository : IFileRepository
         }
     }
 
-    public async Task<File?> GetFileById(Guid id)
+    public async Task<File?> GetFileByIdAsync(Guid id)
     {
         try
         {
@@ -53,17 +55,22 @@ public class FileRepository : IFileRepository
         }
     }
 
-    public IEnumerable<File> ReturnFiles()
+    public async Task<IEnumerable<File>> ReturnFilesAsync()
     {
         try
         {
-            var files = _context.Files.OrderBy(x => x.LastModifiedDate);
-
-            return files;
+            return await _context.Files.OrderBy(x => x.LastModifiedDate).ToListAsync();
         }
         catch (Exception e)
         {
             throw new Exception(e.Message, e);
         }
+    }
+
+    public async Task<bool> CheckFileExistsAsync(string filename)
+    {
+        var file = await _context.Files.AsNoTracking().FirstOrDefaultAsync(x =>
+            string.Equals(x.Name, filename.Trim(), StringComparison.CurrentCultureIgnoreCase));
+        return file != null;
     }
 }
