@@ -14,4 +14,6 @@ public class Library
     public DateTime LastScan { get; set; }
     
     public string AcceptedExtensions { get; set; }
+    
+    public IEnumerable<File> Files { get; set; }
 }

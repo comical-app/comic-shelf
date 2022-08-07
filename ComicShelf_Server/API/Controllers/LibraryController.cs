@@ -238,6 +238,7 @@ public class LibraryController : ControllerBase
                 file.MimeType = FileHelpers.GetMimeTypeFromExtension(file.Extension);
                 file.Size = fileInfo.Length;
                 file.LastModifiedDate = fileInfo.LastWriteTime;
+                file.LibraryId = library.Id;
 
                 if (await _fileRepository.GetFileByNameAsync(file.Name) != null) continue;
 

@@ -69,8 +69,9 @@ public class FileRepository : IFileRepository
 
     public async Task<bool> CheckFileExistsAsync(string filename)
     {
-        var file = await _context.Files.AsNoTracking().FirstOrDefaultAsync(x =>
-            string.Equals(x.Name, filename.Trim(), StringComparison.CurrentCultureIgnoreCase));
+        if (string.IsNullOrWhiteSpace(filename)) throw new ArgumentException("Filename cannot be empty");
+        
+        var file = await _context.Files.AsNoTracking().FirstOrDefaultAsync(x => x.Name == filename.Trim());
         return file != null;
     }
 }

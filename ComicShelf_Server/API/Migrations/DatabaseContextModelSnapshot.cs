@@ -33,6 +33,9 @@ namespace API.Migrations
                     b.Property<DateTime>("LastModifiedDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("LibraryId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("MimeType")
                         .HasColumnType("TEXT");
 
@@ -48,6 +51,8 @@ namespace API.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LibraryId");
 
                     b.ToTable("File");
                 });
@@ -114,6 +119,20 @@ namespace API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("User");
+                });
+
+            modelBuilder.Entity("Models.File", b =>
+                {
+                    b.HasOne("Models.Library", null)
+                        .WithMany("Files")
+                        .HasForeignKey("LibraryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Models.Library", b =>
+                {
+                    b.Navigation("Files");
                 });
 #pragma warning restore 612, 618
         }

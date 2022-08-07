@@ -22,4 +22,6 @@ public class File
     public DateTime AddedAt { get; set; }
     
     public DateTime LastModifiedDate { get; set; }
+    
+    public Guid LibraryId { get; set; }
 }
