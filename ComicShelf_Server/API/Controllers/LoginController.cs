@@ -1,3 +1,4 @@
+using API.Domain.Commands;
 using API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Models;
@@ -18,9 +19,9 @@ public class LoginController : ControllerBase
     }
     
     [HttpPost]
-    public async Task<IActionResult> LoginAsync([FromBody] User user)
+    public async Task<IActionResult> LoginAsync([FromBody] LoginUserRequest user)
     {
-        var userLogin = await _userRepository.LoginAsync(user.Username, user.Password);
+        var userLogin = await _userRepository.LoginAsync(user);
         
         if (userLogin == null)
         {

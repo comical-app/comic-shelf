@@ -371,7 +371,7 @@ public class LibraryRepositoryTests
             await _dbContext.Libraries.AddAsync(library);
             await _dbContext.SaveChangesAsync();
             
-            var newLibrary = new CreateLibraryRequest()
+            var newLibrary = new CreateLibraryRequest
             {
                 Name = library.Name,
                 Path = library.Path,

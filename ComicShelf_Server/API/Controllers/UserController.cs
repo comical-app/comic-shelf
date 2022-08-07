@@ -52,7 +52,7 @@ public class UserController : ControllerBase
     }
     
     [HttpPut]
-    public IActionResult Put([FromBody] User user)
+    public IActionResult Put([FromBody] UpdateUserRequest user)
     {
         if (user == null)
             return BadRequest();

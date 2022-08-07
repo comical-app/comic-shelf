@@ -341,7 +341,7 @@ public class UserRepositoryTests
         public async Task Should_create_user()
         {
             // Arrange
-            var newUser = new CreateUserRequest()
+            var newUser = new CreateUserRequest
             {
                 Username = "UserAdmin",
                 Password = "12345",
@@ -359,7 +359,6 @@ public class UserRepositoryTests
             {
                 result.Id.Should().Be(user.Id);
                 result.Username.Should().Be(newUser.Username);
-                result.Password.Should().Be(newUser.Password);
                 result.IsAdmin.Should().Be(newUser.IsAdmin);
                 result.CanAccessOpds.Should().Be(newUser.CanAccessOpds);
                 result.IsActive.Should().BeTrue();
@@ -384,7 +383,7 @@ public class UserRepositoryTests
             await _dbContext.Users.AddAsync(user);
             await _dbContext.SaveChangesAsync();
             
-            var newUser = new CreateUserRequest()
+            var newUser = new CreateUserRequest
             {
                 Username = user.Username,
                 Password = user.Password,
@@ -457,16 +456,11 @@ public class UserRepositoryTests
 
             await _dbContext.SaveChangesAsync();
             
-            var user = new User
+            var user = new UpdateUserRequest
             {
                 Id = _userId,
                 Username = "UserAdminXYZ",
-                Password = "12345",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
                 IsAdmin = true,
-                LastLogin = DateTime.Now,
                 CanAccessOpds = true
             };
 
@@ -501,16 +495,11 @@ public class UserRepositoryTests
         public async Task Should_throw_exception_when_user_does_not_exist()
         {
             // Arrange
-            var user = new User
+            var user = new UpdateUserRequest
             {
                 Id = Guid.NewGuid(),
                 Username = "UserAdminXYZ",
-                Password = "12345",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
                 IsAdmin = true,
-                LastLogin = DateTime.Now,
                 CanAccessOpds = true
             };
 
@@ -652,12 +641,15 @@ public class UserRepositoryTests
             await _dbContext.Users.AddAsync(user2);
 
             await _dbContext.SaveChangesAsync();
-            
-            const string username = "UserAdmin";
-            const string password = "12345";
+
+            var loginForm = new LoginUserRequest
+            {
+                Username = "UserAdmin",
+                Password = "12345"
+            };
 
             // Act
-            var result = await _userRepository.LoginAsync(username, password);
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().NotBeNull();
@@ -675,15 +667,14 @@ public class UserRepositoryTests
         [Test]
         public async Task Should_return_null_when_username_is_incorrect()
         {
-            // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
-                Username = "UserAdmin",
+                Username = "UserAdmin2",
                 Password = "12345"
             };
 
             // Act
-            var result = await _userRepository.LoginAsync("UserAdmin2", user.Password);
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -692,15 +683,14 @@ public class UserRepositoryTests
         [Test]
         public async Task Should_return_null_when_password_is_incorrect()
         {
-            // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
-                Username = "UserAdmin",
-                Password = "12345"
+                Username = _username,
+                Password = "987654321"
             };
 
             // Act
-            var result = await _userRepository.LoginAsync(user.Username, "1234567");
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -710,14 +700,14 @@ public class UserRepositoryTests
         public async Task Should_return_null_when_username_is_null()
         {
             // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
-                Username = "UserAdmin",
+                Username = null,
                 Password = "12345"
             };
 
             // Act
-            var result = await _userRepository.LoginAsync(null, user.Password);
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -727,14 +717,14 @@ public class UserRepositoryTests
         public async Task Should_return_null_when_password_is_null()
         {
             // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
                 Username = "UserAdmin",
-                Password = "12345"
+                Password = null
             };
 
             // Act
-            var result = await _userRepository.LoginAsync(user.Username, null);
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -744,14 +734,14 @@ public class UserRepositoryTests
         public async Task Should_return_null_when_username_is_empty()
         {
             // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
-                Username = "UserAdmin",
-                Password = "12345"
+                Username = "",
+                Password = _password
             };
 
             // Act
-            var result = await _userRepository.LoginAsync("", user.Password);
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -761,14 +751,14 @@ public class UserRepositoryTests
         public async Task Should_return_null_when_password_is_empty()
         {
             // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
                 Username = "UserAdmin",
-                Password = "12345"
+                Password = ""
             };
 
             // Act
-            var result = await _userRepository.LoginAsync(user.Username, "");
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -778,14 +768,14 @@ public class UserRepositoryTests
         public async Task Should_return_null_when_username_is_whitespace()
         {
             // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
-                Username = "UserAdmin",
+                Username = " ",
                 Password = "12345"
             };
 
             // Act
-            var result = await _userRepository.LoginAsync(" ", user.Password);
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -795,14 +785,14 @@ public class UserRepositoryTests
         public async Task Should_return_null_when_password_is_whitespace()
         {
             // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
                 Username = "UserAdmin",
-                Password = "12345"
+                Password = " "
             };
 
             // Act
-            var result = await _userRepository.LoginAsync(user.Username, " ");
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();
@@ -812,14 +802,47 @@ public class UserRepositoryTests
         public async Task Should_return_null_when_username_is_null_and_password_is_null()
         {
             // Arrange
-            var user = new User
+            var loginForm = new LoginUserRequest
             {
-                Username = "UserAdmin",
-                Password = "12345"
+                Username = null,
+                Password = null
             };
 
             // Act
-            var result = await _userRepository.LoginAsync(null, null);
+            var result = await _userRepository.LoginAsync(loginForm);
+
+            // Assert
+            result.Should().BeNull();
+        }
+        
+        [Test]
+        public async Task Should_return_null_when_user_is_not_active()
+        {
+            // Arrange
+            var user1 = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = "UserNotActive",
+                Password = _password,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                IsActive = false,
+                IsAdmin = _isAdmin,
+                LastLogin = DateTime.Now,
+                CanAccessOpds = _canAccessOpds
+            };
+            await _dbContext.Users.AddAsync(user1);
+
+            await _dbContext.SaveChangesAsync();
+
+            var loginForm = new LoginUserRequest
+            {
+                Username = "UserNotActive",
+                Password = _password
+            };
+
+            // Act
+            var result = await _userRepository.LoginAsync(loginForm);
 
             // Assert
             result.Should().BeNull();

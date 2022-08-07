@@ -49,7 +49,7 @@ public class UserRepository : IUserRepository
         var newUser = new User
         {
             Username = user.Username.Trim(),
-            Password = user.Password,
+            Password = BCrypt.Net.BCrypt.HashPassword(user.Password),
             IsAdmin = user.IsAdmin,
             CanAccessOpds = user.CanAccessOpds,
             CreatedAt = DateTime.Now,
@@ -61,7 +61,7 @@ public class UserRepository : IUserRepository
         return await Task.FromResult(newUser);
     }
 
-    public async Task<bool> UpdateUserAsync(User user)
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest user)
     {
         var userToEdit = await _context.Users.FirstOrDefaultAsync(x => x.Id == user.Id);
         if (userToEdit == null) return false;
@@ -72,7 +72,6 @@ public class UserRepository : IUserRepository
         }
 
         userToEdit.Username = user.Username.Trim();
-        userToEdit.IsActive = user.IsActive;
         userToEdit.IsAdmin = user.IsAdmin;
         userToEdit.CanAccessOpds = user.CanAccessOpds;
         userToEdit.UpdatedAt = DateTime.Now;
@@ -91,16 +90,18 @@ public class UserRepository : IUserRepository
         return await Task.FromResult(true);
     }
 
-    public async Task<User?> LoginAsync(string username, string password)
+    public async Task<User?> LoginAsync(LoginUserRequest user)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(x =>
-            x.Username == username && x.Password == password && x.IsActive);
-        if (user == null) return null;
+        var loggedUser = await _context.Users.FirstOrDefaultAsync(x =>
+            x.Username == user.Username && x.IsActive);
+        if (loggedUser == null) return null;
+        
+        if (!BCrypt.Net.BCrypt.Verify(user.Password, loggedUser.Password)) return null;
 
-        user.LastLogin = DateTime.Now;
-        _context.Users.Update(user);
+        loggedUser.LastLogin = DateTime.Now;
+        _context.Users.Update(loggedUser);
         await _context.SaveChangesAsync();
-        return user;
+        return loggedUser;
     }
 
     public async Task<bool> ResetPasswordAsync(Guid userId, string newPassword, string newPasswordConfirmation)
@@ -133,8 +134,10 @@ public class UserRepository : IUserRepository
 
         if (newPassword != newPasswordConfirmation) throw new Exception("New password and new password confirmation do not match");
 
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Password == oldPassword);
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
         if (user == null) return false;
+        
+        if (!BCrypt.Net.BCrypt.Verify(oldPassword, user.Password)) return false;
 
         user.Password = newPassword;
         user.UpdatedAt = DateTime.Now;
