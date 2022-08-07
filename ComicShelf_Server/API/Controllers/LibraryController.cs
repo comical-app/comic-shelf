@@ -2,7 +2,6 @@ using API.Domain.Commands;
 using API.Interfaces;
 using Infra.Helpers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Models;
 using File = Models.File;
 
@@ -12,15 +11,13 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class LibraryController : ControllerBase
 {
-    private readonly IOptions<LibrariesConfig> _libraryConfig;
     private readonly IFileRepository _fileRepository;
     private readonly ILibraryRepository _libraryRepository;
     private readonly ILogger<LibraryController> _logger;
 
-    public LibraryController(IOptions<LibrariesConfig> libraryConfig, IFileRepository fileRepository,
+    public LibraryController(IFileRepository fileRepository,
         ILogger<LibraryController> logger, ILibraryRepository libraryRepository)
     {
-        _libraryConfig = libraryConfig;
         _fileRepository = fileRepository;
         _logger = logger;
         _libraryRepository = libraryRepository;
@@ -60,6 +57,27 @@ public class LibraryController : ControllerBase
             return NotFound();
 
         return Ok(library);
+    }
+    
+    /// <summary>
+    /// Return all files from library
+    /// </summary>
+    /// <param name="libraryId" example="e9a314af-d4b6-4907-a707-ca583571f596">Library identification</param>
+    /// <response code="200">files retrieved</response>
+    /// <response code="404">Library not found</response>
+    [HttpGet("{libraryId:guid}/files")]
+    [ProducesResponseType(typeof(IEnumerable<File>), 200)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> GetFilesByLibraryId(Guid libraryId)
+    {
+        var library = await _libraryRepository.GetLibraryByIdAsync(libraryId);
+        
+        if (library == null)
+            return NotFound();
+
+        var files = await _fileRepository.ReturnFilesByLibraryIdAsync(libraryId);
+
+        return Ok(files);
     }
 
     /// <summary>
@@ -215,10 +233,11 @@ public class LibraryController : ControllerBase
         try
         {
             var library = await _libraryRepository.GetLibraryByIdAsync(libraryId);
-            await _libraryRepository.UpdateLastScanDate(libraryId);
         
             if (library == null)
                 return NotFound();
+            
+            await _libraryRepository.UpdateLastScanDate(libraryId);
             
             var newFilesCount = 0;
             var sourceDirectory = library.Path;

@@ -67,10 +67,18 @@ public class FileRepository : IFileRepository
         }
     }
 
+    public async Task<IEnumerable<File>> ReturnFilesByLibraryIdAsync(Guid libraryId)
+    {
+        var libraryToEdit = await _context.Libraries.FirstOrDefaultAsync(x => x.Id == libraryId);
+        if (libraryToEdit == null) throw new Exception("Library not found");
+
+        return await _context.Files.Where(x => x.LibraryId == libraryId).OrderBy(x => x.LastModifiedDate).ToListAsync();
+    }
+
     public async Task<bool> CheckFileExistsAsync(string filename)
     {
         if (string.IsNullOrWhiteSpace(filename)) throw new ArgumentException("Filename cannot be empty");
-        
+
         var file = await _context.Files.AsNoTracking().FirstOrDefaultAsync(x => x.Name == filename.Trim());
         return file != null;
     }

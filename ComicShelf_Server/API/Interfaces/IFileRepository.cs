@@ -12,5 +12,7 @@ public interface IFileRepository
 
     Task<IEnumerable<File>> ReturnFilesAsync();
 
+    Task<IEnumerable<File>> ReturnFilesByLibraryIdAsync(Guid libraryId);
+
     Task<bool> CheckFileExistsAsync(string filename);
 }
