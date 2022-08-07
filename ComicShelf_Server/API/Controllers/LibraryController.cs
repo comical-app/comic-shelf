@@ -215,6 +215,7 @@ public class LibraryController : ControllerBase
         try
         {
             var library = await _libraryRepository.GetLibraryByIdAsync(libraryId);
+            await _libraryRepository.UpdateLastScanDate(libraryId);
         
             if (library == null)
                 return NotFound();

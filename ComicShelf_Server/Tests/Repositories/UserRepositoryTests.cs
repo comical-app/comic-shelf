@@ -222,13 +222,13 @@ public class UserRepositoryTests
     }
 
     [TestFixture]
-    public class CheckIfUsernameExistsAsync
+    public class CheckIfUsernameIsUniqueAsync
     {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private IUserRepository _userRepository;
 
-        public CheckIfUsernameExistsAsync()
+        public CheckIfUsernameIsUniqueAsync()
         {
             _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
                 .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
@@ -275,43 +275,43 @@ public class UserRepositoryTests
         }
 
         [Test]
-        public async Task Should_return_true_when_username_exists()
+        public async Task Should_return_false_when_username_exists()
         {
             // Act
-            var result = await _userRepository.CheckIfUsernameExistsAsync("UserRegular");
+            var result = await _userRepository.CheckIfUsernameIsUniqueAsync("UserRegular");
+
+            // Assert
+            result.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task Should_return_true_when_username_does_not_exist()
+        {
+            // Act
+            var result = await _userRepository.CheckIfUsernameIsUniqueAsync("UserDoesNotExist");
 
             // Assert
             result.Should().BeTrue();
         }
 
         [Test]
-        public async Task Should_return_false_when_username_does_not_exist()
+        public async Task Should_throw_exception_when_username_is_empty()
         {
             // Act
-            var result = await _userRepository.CheckIfUsernameExistsAsync("UserDoesNotExist");
+            Func<Task> action = async () => await _userRepository.CheckIfUsernameIsUniqueAsync(string.Empty);
 
             // Assert
-            result.Should().BeFalse();
+            await action.Should().ThrowAsync<ArgumentException>();
         }
 
         [Test]
-        public async Task Should_return_false_when_username_is_empty()
+        public async Task Should_throw_exception_when_username_is_whitespace()
         {
             // Act
-            var result = await _userRepository.CheckIfUsernameExistsAsync(string.Empty);
+            Func<Task> action = async () => await _userRepository.CheckIfUsernameIsUniqueAsync(" ");
 
             // Assert
-            result.Should().BeFalse();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_username_is_whitespace()
-        {
-            // Act
-            var result = await _userRepository.CheckIfUsernameExistsAsync(" ");
-
-            // Assert
-            result.Should().BeFalse();
+            await action.Should().ThrowAsync<ArgumentException>();
         }
     }
 

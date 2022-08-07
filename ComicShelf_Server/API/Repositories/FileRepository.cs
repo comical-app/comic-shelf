@@ -31,11 +31,11 @@ public class FileRepository : IFileRepository
         }
     }
 
-    public async Task<File?> GetFileByNameAsync(string name)
+    public async Task<File?> GetFileByNameAsync(string filename)
     {
         try
         {
-            return await _context.Files.FirstOrDefaultAsync(x => x.Name == name);
+            return await _context.Files.FirstOrDefaultAsync(x => x.Name == filename);
         }
         catch (Exception e)
         {
@@ -43,11 +43,11 @@ public class FileRepository : IFileRepository
         }
     }
 
-    public async Task<File?> GetFileByIdAsync(Guid id)
+    public async Task<File?> GetFileByIdAsync(Guid fileId)
     {
         try
         {
-            return await _context.Files.FirstOrDefaultAsync(x => x.Id == id);
+            return await _context.Files.FirstOrDefaultAsync(x => x.Id == fileId);
         }
         catch (Exception e)
         {

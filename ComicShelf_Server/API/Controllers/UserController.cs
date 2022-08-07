@@ -84,7 +84,7 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _userRepository.CheckIfUsernameExistsAsync(username);
+            var user = await _userRepository.CheckIfUsernameIsUniqueAsync(username);
 
             return Ok(user);
         }

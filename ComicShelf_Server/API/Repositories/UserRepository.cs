@@ -25,26 +25,27 @@ public class UserRepository : IUserRepository
         return await _context.Users.Where(x => x.CanAccessOpds).ToListAsync();
     }
 
-    public async Task<User?> GetUserByIdAsync(Guid id)
+    public async Task<User?> GetUserByIdAsync(Guid userId)
     {
-        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId);
         return user ?? null;
     }
 
-    public async Task<bool> CheckIfUsernameExistsAsync(string username)
+    public async Task<bool> CheckIfUsernameIsUniqueAsync(string username)
     {
+        if (string.IsNullOrWhiteSpace(username)) throw new ArgumentException("Username cannot be empty");
+        
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x =>
             string.Equals(x.Username, username.Trim(), StringComparison.CurrentCultureIgnoreCase));
-        return user != null;
+
+        return user == null;
     }
 
     public async Task<User> CreateUserAsync(CreateUserRequest user)
     {
         if (string.IsNullOrWhiteSpace(user.Username)) throw new ArgumentException("Username cannot be empty");
-
         if (string.IsNullOrWhiteSpace(user.Password)) throw new ArgumentException("Password cannot be empty");
-
-        if (await CheckIfUsernameExistsAsync(user.Username)) throw new Exception("Username already exists");
+        if (!await CheckIfUsernameIsUniqueAsync(user.Username)) throw new ArgumentException("Username already exists");
 
         var newUser = new User
         {
@@ -63,14 +64,14 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> UpdateUserAsync(Guid userId, UpdateUserRequest user)
     {
-        if (user == null) throw new Exception("User cannot be null");
+        if (user == null) throw new ArgumentException("User cannot be null");
         
         var userToEdit = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
         if (userToEdit == null) return false;
 
         if (user.Username != userToEdit.Username)
         {
-            if (await CheckIfUsernameExistsAsync(user.Username)) throw new Exception("Username already exists");
+            if (!await CheckIfUsernameIsUniqueAsync(user.Username)) throw new ArgumentException("Username already exists");
         }
 
         userToEdit.Username = user.Username.Trim();
@@ -82,9 +83,9 @@ public class UserRepository : IUserRepository
         return await Task.FromResult(true);
     }
 
-    public async Task<bool> DeleteUserAsync(Guid id)
+    public async Task<bool> DeleteUserAsync(Guid userId)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
         if (user == null) return false;
 
         _context.Users.Remove(user);

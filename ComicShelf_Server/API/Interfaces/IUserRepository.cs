@@ -9,15 +9,15 @@ public interface IUserRepository
 
     Task<IEnumerable<User>> ListUsersWithOpdsAccessAsync();
 
-    Task<User?> GetUserByIdAsync(Guid id);
+    Task<User?> GetUserByIdAsync(Guid userId);
     
-    Task<bool> CheckIfUsernameExistsAsync(string username);
+    Task<bool> CheckIfUsernameIsUniqueAsync(string username);
     
     Task<User> CreateUserAsync(CreateUserRequest user);
     
     Task<bool> UpdateUserAsync(Guid userId, UpdateUserRequest user);
     
-    Task<bool> DeleteUserAsync(Guid id);
+    Task<bool> DeleteUserAsync(Guid userId);
     
     Task<User?> LoginAsync(LoginUserRequest user);
     

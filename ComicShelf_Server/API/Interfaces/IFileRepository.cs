@@ -6,9 +6,9 @@ public interface IFileRepository
 {
     Task<File> SaveAsync(File file);
 
-    Task<File?> GetFileByNameAsync(string name);
+    Task<File?> GetFileByNameAsync(string filename);
 
-    Task<File?> GetFileByIdAsync(Guid id);
+    Task<File?> GetFileByIdAsync(Guid fileId);
 
     Task<IEnumerable<File>> ReturnFilesAsync();
 

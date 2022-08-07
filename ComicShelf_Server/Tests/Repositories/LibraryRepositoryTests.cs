@@ -15,8 +15,8 @@ namespace Tests.Repositories;
 public class LibraryRepositoryTests
 {
     [TestFixture]
-    public class ListLibrariesAsync{
-        
+    public class ListLibrariesAsync
+    {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
@@ -65,10 +65,10 @@ public class LibraryRepositoryTests
             libraries.Should().HaveCount(2);
         }
     }
-        
+
     [TestFixture]
-    public class GetLibraryByIdAsync{
-        
+    public class GetLibraryByIdAsync
+    {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
@@ -138,10 +138,10 @@ public class LibraryRepositoryTests
             result.Should().BeNull();
         }
     }
-        
+
     [TestFixture]
-    public class CheckLibraryNameIsUniqueAsync{
-        
+    public class CheckLibraryNameIsUniqueAsync
+    {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
@@ -183,49 +183,47 @@ public class LibraryRepositoryTests
         }
 
         [Test]
-        public async Task Should_return_true_when_name_exists()
+        public async Task Should_return_false_when_name_exists()
         {
             // Act
             var result = await _libraryRepository.CheckLibraryNameIsUniqueAsync("LibraryRegular");
+
+            // Assert
+            result.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task Should_return_true_when_name_does_not_exist()
+        {
+            // Act
+            var result = await _libraryRepository.CheckLibraryNameIsUniqueAsync("LibraryDoesNotExist");
 
             // Assert
             result.Should().BeTrue();
         }
 
         [Test]
-        public async Task Should_return_false_when_name_does_not_exist()
+        public async Task Should_throw_exception_when_name_is_empty()
         {
             // Act
-            var result = await _libraryRepository.CheckLibraryNameIsUniqueAsync("LibraryDoesNotExist");
-
+            Func<Task> action = async () => await _libraryRepository.CheckLibraryNameIsUniqueAsync(string.Empty);
             // Assert
-            result.Should().BeFalse();
+            await action.Should().ThrowAsync<ArgumentException>();
         }
 
         [Test]
-        public async Task Should_return_false_when_name_is_empty()
+        public async Task Should_throw_exception_when_name_is_whitespace()
         {
             // Act
-            var result = await _libraryRepository.CheckLibraryNameIsUniqueAsync(string.Empty);
-
+            Func<Task> action = async () => await _libraryRepository.CheckLibraryNameIsUniqueAsync(" ");
             // Assert
-            result.Should().BeFalse();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_name_is_whitespace()
-        {
-            // Act
-            var result = await _libraryRepository.CheckLibraryNameIsUniqueAsync(" ");
-
-            // Assert
-            result.Should().BeFalse();
+            await action.Should().ThrowAsync<ArgumentException>();
         }
     }
-        
+
     [TestFixture]
-    public class CheckLibraryPathIsUniqueAsync{
-        
+    public class CheckLibraryPathIsUniqueAsync
+    {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
@@ -267,49 +265,49 @@ public class LibraryRepositoryTests
         }
 
         [Test]
-        public async Task Should_return_true_when_path_exists()
+        public async Task Should_return_false_when_path_exists()
         {
             // Act
             var result = await _libraryRepository.CheckLibraryPathIsUniqueAsync(@"C:\Library regular");
+
+            // Assert
+            result.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task Should_return_true_when_path_does_not_exist()
+        {
+            // Act
+            var result = await _libraryRepository.CheckLibraryPathIsUniqueAsync(@"D:\Library regular");
 
             // Assert
             result.Should().BeTrue();
         }
 
         [Test]
-        public async Task Should_return_false_when_path_does_not_exist()
+        public async Task Should_throw_exception_when_path_is_empty()
         {
             // Act
-            var result = await _libraryRepository.CheckLibraryPathIsUniqueAsync(@"D:\Library regular");
+            Func<Task> action = async () => await _libraryRepository.CheckLibraryPathIsUniqueAsync(string.Empty);
 
             // Assert
-            result.Should().BeFalse();
+            await action.Should().ThrowAsync<ArgumentException>();
         }
 
         [Test]
-        public async Task Should_return_false_when_path_is_empty()
+        public async Task Should_throw_exception_when_path_is_whitespace()
         {
             // Act
-            var result = await _libraryRepository.CheckLibraryPathIsUniqueAsync(string.Empty);
+            Func<Task> action = async () => await _libraryRepository.CheckLibraryPathIsUniqueAsync(" ");
 
             // Assert
-            result.Should().BeFalse();
+            await action.Should().ThrowAsync<ArgumentException>();
         }
-
-        [Test]
-        public async Task Should_return_false_when_path_is_whitespace()
-        {
-            // Act
-            var result = await _libraryRepository.CheckLibraryPathIsUniqueAsync(" ");
-
-            // Assert
-            result.Should().BeFalse();
-        }
-        
     }
-        
+
     [TestFixture]
-    public class CreateLibraryAsync{
+    public class CreateLibraryAsync
+    {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
@@ -351,7 +349,7 @@ public class LibraryRepositoryTests
                 result.Id.Should().Be(library.Id);
                 result.Name.Should().Be(newLibrary.Name);
                 result.Path.Should().Be(newLibrary.Path);
-                result.AcceptedExtensions.Should().Be(string.Join(",",newLibrary.AcceptedExtensions));
+                result.AcceptedExtensions.Should().Be(string.Join(",", newLibrary.AcceptedExtensions));
             }
         }
 
@@ -369,7 +367,7 @@ public class LibraryRepositoryTests
             };
             await _dbContext.Libraries.AddAsync(library);
             await _dbContext.SaveChangesAsync();
-            
+
             var newLibrary = new CreateLibraryRequest
             {
                 Name = library.Name,
@@ -378,10 +376,7 @@ public class LibraryRepositoryTests
             };
 
             // Act
-            Func<Task> result = async () =>
-            {
-                await _libraryRepository.CreateLibraryAsync(newLibrary);
-            };
+            Func<Task> result = async () => { await _libraryRepository.CreateLibraryAsync(newLibrary); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -397,10 +392,10 @@ public class LibraryRepositoryTests
             await result.Should().ThrowAsync<Exception>();
         }
     }
-        
+
     [TestFixture]
-    public class UpdateLibraryAsync{
-        
+    public class UpdateLibraryAsync
+    {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
@@ -437,12 +432,12 @@ public class LibraryRepositoryTests
             await _dbContext.Libraries.AddAsync(existentLibrary);
 
             await _dbContext.SaveChangesAsync();
-            
+
             var library = new UpdateLibraryRequest
             {
                 Name = "My Comic Library",
                 Path = @"C:\Comics folder",
-                AcceptedExtensions = new []{"7z"}
+                AcceptedExtensions = new[] {"7z"}
             };
 
             // Act
@@ -459,7 +454,7 @@ public class LibraryRepositoryTests
                 result.AcceptedExtensions.Should().Be("7z");
             }
         }
-        
+
         [Test]
         public async Task Should_throw_exception_when_library_is_null()
         {
@@ -469,7 +464,7 @@ public class LibraryRepositoryTests
             // Assert
             await result.Should().ThrowAsync<Exception>();
         }
-        
+
         [Test]
         public async Task Should_throw_exception_when_library_does_not_exist()
         {
@@ -478,19 +473,20 @@ public class LibraryRepositoryTests
             {
                 Name = "My Comic Library",
                 Path = @"C:\Comics folder",
-                AcceptedExtensions = new []{"7z"}
+                AcceptedExtensions = new[] {"7z"}
             };
 
             // Act
-            var result =  await _libraryRepository.UpdateLibraryAsync(Guid.NewGuid(), library);
+            var result = await _libraryRepository.UpdateLibraryAsync(Guid.NewGuid(), library);
 
             // Assert
             result.Should().BeFalse();
         }
     }
-        
+
     [TestFixture]
-    public class DeleteLibraryAsync{
+    public class DeleteLibraryAsync
+    {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
@@ -543,6 +539,66 @@ public class LibraryRepositoryTests
 
             // Assert
             result.Should().BeFalse();
+        }
+    }
+
+    [TestFixture]
+    public class UpdateLastScanDate
+    {
+        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
+        private DatabaseContext _dbContext;
+        private ILibraryRepository _libraryRepository;
+        private readonly Guid _libraryId;
+
+        public UpdateLastScanDate()
+        {
+            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
+                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
+                .Options;
+            _libraryId = Guid.NewGuid();
+        }
+
+        [SetUp]
+        public async Task Setup()
+        {
+            _dbContext = new DatabaseContext(_dbContextOptions);
+            _libraryRepository = new LibraryRepository(_dbContext);
+        }
+
+        [Test]
+        public async Task Should_update_last_scan_date()
+        {
+            // Arrange
+            var date = DateTime.Now;
+            var library = new Library
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Library",
+                Path = @"C:\Test Library",
+                LastScan = DateTime.Now,
+                AcceptedExtensions = "rar, zip"
+            };
+            await _dbContext.Libraries.AddAsync(library);
+
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            await _libraryRepository.UpdateLastScanDate(library.Id);
+            var result = await _libraryRepository.GetLibraryByIdAsync(library.Id);
+
+            // Assert
+            result.Should().NotBeNull();
+            result?.LastScan.Should().BeAfter(date);
+        }
+
+        [Test]
+        public async Task Should_throw_exception_when_library_does_not_exist()
+        {
+            // Act
+            Func<Task> result = async () => { await _libraryRepository.UpdateLastScanDate(Guid.NewGuid()); };
+
+            // Assert
+            await result.Should().ThrowAsync<Exception>();
         }
     }
 }
