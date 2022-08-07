@@ -1,5 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Models;
 
+[Table("Library")]
 public class Library
 {
     public Guid Id { get; set; }
