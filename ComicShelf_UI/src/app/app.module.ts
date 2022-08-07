@@ -9,10 +9,17 @@ import {LibraryModule} from "./library/library.module";
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
+import { NotLoggedComponent } from './template-layout/not-logged/not-logged.component';
+import { LoggedComponent } from './template-layout/logged/logged.component';
+import { MenuNavbarComponent } from './template-layout/menu-navbar/menu-navbar.component';
+import {TemplateLayoutModule} from "./template-layout/template-layout.module";
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    NotLoggedComponent,
+    LoggedComponent,
+    MenuNavbarComponent
   ],
   imports: [
     BrowserModule,
@@ -20,6 +27,7 @@ import { environment } from '../environments/environment';
     FileModule,
     ConfigModule,
     LibraryModule,
+    TemplateLayoutModule,
     NgbModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: environment.production,
