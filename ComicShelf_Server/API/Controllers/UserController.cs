@@ -77,7 +77,7 @@ public class UserController : ControllerBase
     /// <param name="username" example="johndoe">Username</param>
     /// <response code="200">Username exists</response>
     /// <response code="500">Fail to check if the username exists</response>
-    [HttpGet("verify-username/{username}")]
+    [HttpGet("verify-username-is-unique/{username}")]
     [ProducesResponseType(typeof(bool), 200)]
     [ProducesResponseType(500)]
     public async Task<IActionResult> CheckUsername(string username)

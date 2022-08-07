@@ -35,8 +35,7 @@ public class UserRepository : IUserRepository
     {
         if (string.IsNullOrWhiteSpace(username)) throw new ArgumentException("Username cannot be empty");
         
-        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x =>
-            string.Equals(x.Username, username.Trim(), StringComparison.CurrentCultureIgnoreCase));
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Username == username.Trim());
 
         return user == null;
     }

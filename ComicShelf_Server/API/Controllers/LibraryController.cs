@@ -68,7 +68,7 @@ public class LibraryController : ControllerBase
     /// <param name="libraryName" example="comics">Name</param>
     /// <response code="200">Library with given name exists</response>
     /// <response code="500">Fail to check if the library with that name exists</response>
-    [HttpGet("verify-name/{libraryName}")]
+    [HttpGet("verify-name-is-unique/{libraryName}")]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task<IActionResult> CheckLibraryName(string libraryName)
     {
@@ -91,7 +91,7 @@ public class LibraryController : ControllerBase
     /// <param name="libraryPath" example="C:\Comics folder">Path</param>
     /// <response code="200">Library with given path exists</response>
     /// <response code="500">Fail to check if the library with that name exists</response>
-    [HttpGet("verify-name/{libraryPath}")]
+    [HttpGet("verify-path-is-unique/{libraryPath}")]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task<IActionResult> CheckLibraryPath(string libraryPath)
     {
