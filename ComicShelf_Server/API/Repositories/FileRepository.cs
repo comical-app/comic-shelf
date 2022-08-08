@@ -18,9 +18,10 @@ public class FileRepository : IFileRepository
     {
         try
         {
-            if (await CheckFileExistsAsync(file.Name)) throw new Exception("File already exists");
+            if (await CheckFileExistsByFilenameAsync(file.Name)) throw new Exception("File already exists");
 
             file.AddedAt = DateTime.Now;
+            file.Analysed = false;
             await _context.Files.AddAsync(file);
             await _context.SaveChangesAsync();
             return await Task.FromResult(file);
@@ -75,11 +76,35 @@ public class FileRepository : IFileRepository
         return await _context.Files.Where(x => x.LibraryId == libraryId).OrderBy(x => x.LastModifiedDate).ToListAsync();
     }
 
-    public async Task<bool> CheckFileExistsAsync(string filename)
+    public async Task<bool> CheckFileExistsByFilenameAsync(string filename)
     {
         if (string.IsNullOrWhiteSpace(filename)) throw new ArgumentException("Filename cannot be empty");
 
         var file = await _context.Files.AsNoTracking().FirstOrDefaultAsync(x => x.Name == filename.Trim());
         return file != null;
+    }
+
+    public async Task SetFileToBeAnalyzedAsync(string filename, DateTime lastModifiedDate)
+    {
+        var file = await _context.Files.FirstOrDefaultAsync(x => x.Name == filename);
+        if (file == null) throw new Exception("File not found");
+
+        if (file.LastModifiedDate != lastModifiedDate)
+        {
+            file.LastModifiedDate = lastModifiedDate;
+            file.Analysed = false;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<bool> SetFileAsAnalyzedAsync(string filename)
+    {
+        var file = await _context.Files.FirstOrDefaultAsync(x => x.Name == filename);
+        if (file == null) throw new Exception("File not found");
+
+        file.Analysed = false;
+        await _context.SaveChangesAsync();
+
+        return await Task.FromResult(true);
     }
 }

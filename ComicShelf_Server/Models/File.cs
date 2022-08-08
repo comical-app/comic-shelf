@@ -24,4 +24,8 @@ public class File
     public DateTime LastModifiedDate { get; set; }
     
     public Guid LibraryId { get; set; }
+    
+    public bool Analysed { get; set; }
+    
+    public bool HasComicInfoFile { get; set; }
 }

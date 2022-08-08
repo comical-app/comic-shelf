@@ -14,5 +14,9 @@ public interface IFileRepository
 
     Task<IEnumerable<File>> ReturnFilesByLibraryIdAsync(Guid libraryId);
 
-    Task<bool> CheckFileExistsAsync(string filename);
+    Task<bool> CheckFileExistsByFilenameAsync(string filename);
+    
+    Task SetFileToBeAnalyzedAsync(string filename, DateTime lastModifiedDate);
+    
+    Task<bool> SetFileAsAnalyzedAsync(string filename);
 }
