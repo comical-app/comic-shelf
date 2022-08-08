@@ -11,6 +11,11 @@ const string serviceName = "ComicShelf";
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("IsAdmin"));
+    options.AddPolicy("OdpsAccessOnly", policy => policy.RequireClaim("CanAccessOdps"));
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -47,4 +52,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
