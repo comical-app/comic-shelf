@@ -1,7 +1,7 @@
-using API.Domain.Commands;
-using API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Models;
+using Models.Commands;
+using Models.Domain;
+using Models.ServicesInterfaces;
 
 namespace API.Controllers;
 
@@ -9,12 +9,12 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class LoginController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IUserService _userService;
     private readonly ILogger<LoginController> _logger;
 
-    public LoginController(IUserRepository userRepository, ILogger<LoginController> logger)
+    public LoginController(IUserService userService, ILogger<LoginController> logger)
     {
-        _userRepository = userRepository;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -27,19 +27,19 @@ public class LoginController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(User), 200)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> LoginAsync([FromBody] LoginUserRequest user)
+    public async Task<IActionResult> LoginAsync([FromBody] LoginUserCommand user)
     {
         try
         {
-            var userLogin = await _userRepository.LoginAsync(user);
+            var userLogin = await _userService.LoginAsync(user);
 
             if (userLogin == null) return BadRequest("User or password invalid");
 
             return Ok(userLogin);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(e, "Fail to login. {EMessage}", e.Message);
             return BadRequest("An error occurred while trying to login");
         }
     }

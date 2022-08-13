@@ -1,12 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using API.Context;
-using API.Domain.Commands;
-using API.Interfaces;
-using API.Repositories;
 using FluentAssertions;
+using Infra.Context;
+using Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Models;
+using Models.Domain;
+using Models.RepositoryInterfaces;
 using NUnit.Framework;
 
 namespace Tests.Repositories;
@@ -222,6 +221,87 @@ public class UserRepositoryTests
     }
 
     [TestFixture]
+    public class GetUserByUsernameAsync
+    {
+        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
+        private DatabaseContext _dbContext;
+        private IUserRepository _userRepository;
+        private readonly Guid _userId;
+        private readonly string _username;
+        private readonly DateTime _createdAt;
+        private readonly DateTime _updatedAt;
+        private readonly DateTime _lastLogin;
+
+        public GetUserByUsernameAsync()
+        {
+            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
+                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
+                .Options;
+            _userId = Guid.NewGuid();
+            _username = "UserPowerAdmin";
+            _createdAt = DateTime.Today;
+            _updatedAt = DateTime.Today;
+            _lastLogin = DateTime.Today;
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            _dbContext = new DatabaseContext(_dbContextOptions);
+            _userRepository = new UserRepository(_dbContext);
+        }
+
+        [Test]
+        public async Task Should_return_valid_user()
+        {
+            // Arrange
+            var user1 = new User
+            {
+                Id = _userId,
+                Username = _username,
+                Password = "12345",
+                CreatedAt = _createdAt,
+                UpdatedAt = _updatedAt,
+                IsActive = true,
+                IsAdmin = true,
+                LastLogin = _lastLogin,
+                CanAccessOpds = true
+            };
+            await _dbContext.Users.AddAsync(user1);
+
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _userRepository.GetUserByIdAsync(_userId);
+
+            // Assert
+            result.Should().NotBeNull();
+            if (result != null)
+            {
+                result.Id.Should().Be(_userId);
+                result.Username.Should().Be("UserPowerAdmin");
+                result.Password.Should().Be("12345");
+                result.CreatedAt.Should().Be(_createdAt);
+                result.UpdatedAt.Should().Be(_updatedAt);
+                result.IsActive.Should().BeTrue();
+                result.IsAdmin.Should().BeTrue();
+                result.LastLogin.Should().Be(_lastLogin);
+                result.CanAccessOpds.Should().BeTrue();
+            }
+        }
+
+        [Test]
+        public async Task Should_return_null_when_user_not_found()
+        {
+            // Act
+            var result = await _userRepository.GetUserByIdAsync(Guid.NewGuid());
+
+            // Assert
+            result.Should().BeNull();
+        }
+    }
+
+    [TestFixture]
     public class CheckIfUsernameIsUniqueAsync
     {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
@@ -341,7 +421,7 @@ public class UserRepositoryTests
         public async Task Should_create_user()
         {
             // Arrange
-            var newUser = new CreateUserRequest
+            var newUser = new User
             {
                 Username = "UserAdmin",
                 Password = "12345",
@@ -383,7 +463,7 @@ public class UserRepositoryTests
             await _dbContext.Users.AddAsync(user);
             await _dbContext.SaveChangesAsync();
             
-            var newUser = new CreateUserRequest
+            var newUser = new User
             {
                 Username = user.Username,
                 Password = user.Password,
@@ -456,7 +536,7 @@ public class UserRepositoryTests
 
             await _dbContext.SaveChangesAsync();
             
-            var user = new UpdateUserRequest
+            var user = new User
             {
                 Username = "UserAdminXYZ",
                 IsAdmin = true,
@@ -464,7 +544,7 @@ public class UserRepositoryTests
             };
 
             // Act
-            await _userRepository.UpdateUserAsync(_userId, user);
+            await _userRepository.UpdateUserAsync(user);
             var result = await _userRepository.GetUserByIdAsync(_userId);
 
             // Assert
@@ -484,28 +564,10 @@ public class UserRepositoryTests
         public async Task Should_throw_exception_when_user_is_null()
         {
             // Act
-            Func<Task> result = async () => { await _userRepository.UpdateUserAsync(_userId, null); };
+            Func<Task> result = async () => { await _userRepository.UpdateUserAsync(null); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
-        }
-        
-        [Test]
-        public async Task Should_throw_exception_when_user_does_not_exist()
-        {
-            // Arrange
-            var user = new UpdateUserRequest
-            {
-                Username = "UserAdminXYZ",
-                IsAdmin = true,
-                CanAccessOpds = true
-            };
-
-            // Act
-            var result =  await _userRepository.UpdateUserAsync(Guid.NewGuid(), user);
-
-            // Assert
-            result.Should().BeFalse();
         }
     }
 
@@ -516,6 +578,7 @@ public class UserRepositoryTests
         private DatabaseContext _dbContext;
         private IUserRepository _userRepository;
         private readonly Guid _userId;
+        private User _user;
 
         public DeleteUserAsync()
         {
@@ -532,7 +595,7 @@ public class UserRepositoryTests
             _userRepository = new UserRepository(_dbContext);
 
             // Create a user
-            var user1 = new User
+            _user = new User
             {
                 Id = _userId,
                 Username = "UserAdmin",
@@ -544,7 +607,7 @@ public class UserRepositoryTests
                 LastLogin = DateTime.Now,
                 CanAccessOpds = true
             };
-            await _dbContext.Users.AddAsync(user1);
+            await _dbContext.Users.AddAsync(_user);
 
             await _dbContext.SaveChangesAsync();
         }
@@ -553,7 +616,7 @@ public class UserRepositoryTests
         public async Task Should_delete_user()
         {
             // Act
-            await _userRepository.DeleteUserAsync(_userId);
+            await _userRepository.DeleteUserAsync(_user);
             var result = await _userRepository.GetUserByIdAsync(_userId);
 
             // Assert
@@ -563,842 +626,17 @@ public class UserRepositoryTests
         [Test]
         public async Task Should_return_false_when_user_does_not_exist()
         {
-            // Act
-            var result = await _userRepository.DeleteUserAsync(Guid.NewGuid());
-
-            // Assert
-            result.Should().BeFalse();
-        }
-    }
-
-    [TestFixture]
-    public class LoginAsync
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private IUserRepository _userRepository;
-        private readonly Guid _userId;
-        private readonly string _username;
-        private readonly string _password;
-        private readonly bool _isAdmin;
-        private readonly bool _canAccessOpds;
-
-        public LoginAsync()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-
-            _userId = Guid.NewGuid();
-            _username = "UserAdmin";
-            _password = "12345";
-            _isAdmin = true;
-            _canAccessOpds = true;
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _userRepository = new UserRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_return_user_when_username_and_password_are_correct()
-        {
             // Arrange
-
-            // Create admin user
-            var user1 = new CreateUserRequest
-            {
-                Username = _username,
-                Password = _password,
-                IsAdmin = _isAdmin,
-                CanAccessOpds = _canAccessOpds
-            };
-            await _userRepository.CreateUserAsync(user1);
-
-            // Create regular user
-            var user2 = new CreateUserRequest
-            {
-                Username = "UserRegular",
-                Password = "123456",
-                IsAdmin = true,
-                CanAccessOpds = false
-            };
-            await _userRepository.CreateUserAsync(user2);
-
-            await _dbContext.SaveChangesAsync();
-
-            var loginForm = new LoginUserRequest
-            {
-                Username = _username,
-                Password = _password
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().NotBeNull();
-            if (result != null)
-            {
-                result.Username.Should().Be(_username);
-                result.IsActive.Should().BeTrue();
-                result.IsAdmin.Should().Be(_isAdmin);
-                result.CanAccessOpds.Should().Be(_canAccessOpds);
-            }
-        }
-
-        [Test]
-        public async Task Should_return_null_when_username_is_incorrect()
-        {
-            var loginForm = new LoginUserRequest
-            {
-                Username = "UserAdmin2",
-                Password = "12345"
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_password_is_incorrect()
-        {
-            var loginForm = new LoginUserRequest
-            {
-                Username = _username,
-                Password = "987654321"
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_username_is_null()
-        {
-            // Arrange
-            var loginForm = new LoginUserRequest
-            {
-                Username = null,
-                Password = "12345"
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_password_is_null()
-        {
-            // Arrange
-            var loginForm = new LoginUserRequest
-            {
-                Username = "UserAdmin",
-                Password = null
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_username_is_empty()
-        {
-            // Arrange
-            var loginForm = new LoginUserRequest
-            {
-                Username = "",
-                Password = _password
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_password_is_empty()
-        {
-            // Arrange
-            var loginForm = new LoginUserRequest
-            {
-                Username = "UserAdmin",
-                Password = ""
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_username_is_whitespace()
-        {
-            // Arrange
-            var loginForm = new LoginUserRequest
-            {
-                Username = " ",
-                Password = "12345"
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_password_is_whitespace()
-        {
-            // Arrange
-            var loginForm = new LoginUserRequest
-            {
-                Username = "UserAdmin",
-                Password = " "
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Test]
-        public async Task Should_return_null_when_username_is_null_and_password_is_null()
-        {
-            // Arrange
-            var loginForm = new LoginUserRequest
-            {
-                Username = null,
-                Password = null
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-        
-        [Test]
-        public async Task Should_return_null_when_user_is_not_active()
-        {
-            // Arrange
-            var user1 = new User
+            var randomUser = new User
             {
                 Id = Guid.NewGuid(),
-                Username = "UserNotActive",
-                Password = _password,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = false,
-                IsAdmin = _isAdmin,
-                LastLogin = DateTime.Now,
-                CanAccessOpds = _canAccessOpds
-            };
-            await _dbContext.Users.AddAsync(user1);
-
-            await _dbContext.SaveChangesAsync();
-
-            var loginForm = new LoginUserRequest
-            {
-                Username = "UserNotActive",
-                Password = _password
-            };
-
-            // Act
-            var result = await _userRepository.LoginAsync(loginForm);
-
-            // Assert
-            result.Should().BeNull();
-        }
-    }
-
-    [TestFixture]
-    public class ResetPasswordAsync
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private IUserRepository _userRepository;
-        private readonly Guid _userId;
-
-        public ResetPasswordAsync()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-
-            _userId = Guid.NewGuid();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _userRepository = new UserRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_reset_password_when_user_exists()
-        {
-            // Arrange
-            var user = new User
-            {
-                Id = _userId,
-                Username = "UserAdmin",
-                Password = "12345",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
+                Username = "UserAdminXYZ",
                 IsAdmin = true,
-                LastLogin = DateTime.Now,
                 CanAccessOpds = true
             };
-            await _dbContext.Users.AddAsync(user);
-
-            await _dbContext.SaveChangesAsync();
-            
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = _userId,
-                NewPassword = "987654321",
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            var result = await _userRepository.ResetPasswordAsync(resetPasswordForm);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_user_does_not_exist()
-        {
-            // Arrange
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = Guid.NewGuid(),
-                NewPassword = "987654321",
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            var result = await _userRepository.ResetPasswordAsync(resetPasswordForm);
-
-            // Assert
-            result.Should().BeFalse();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_new_password_is_null()
-        {
-            // Arrange
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = _userId,
-                NewPassword = null,
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
-
-            // Assert
-            await result.Should().ThrowAsync<Exception>();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_new_password_is_empty()
-        {
-            // Arrange
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = _userId,
-                NewPassword = "",
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
-
-            // Assert
-            await result.Should().ThrowAsync<Exception>();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_new_password_is_whitespace()
-        {
-            // Arrange
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = _userId,
-                NewPassword = " ",
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
-
-            // Assert
-            await result.Should().ThrowAsync<Exception>();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_new_password_is_null_and_confirm_password_is_null()
-        {
-            // Arrange
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = _userId,
-                NewPassword = null,
-                NewPasswordConfirmation = null
-            };
-
-            // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
-
-            // Assert
-            await result.Should().ThrowAsync<Exception>();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_new_password_is_empty_and_confirm_password_is_empty()
-        {
-            // Arrange
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = _userId,
-                NewPassword = "",
-                NewPasswordConfirmation = ""
-            };
-
-            // Act
-            Func<Task> result = async () => { await _userRepository.ResetPasswordAsync(resetPasswordForm); };
-
-            // Assert
-            await result.Should().ThrowAsync<Exception>();
-        }
-
-        [Test]
-        public async Task Should_return_exception_when_password_doesnt_match()
-        {
-            // Arrange
-            var resetPasswordForm = new ResetUserPasswordRequest
-            {
-                UserId = _userId,
-                NewPassword = "987654321",
-                NewPasswordConfirmation = "987654322"
-            };
-
-            // Act
-            Func<Task> action = async () =>
-                await _userRepository.ResetPasswordAsync(resetPasswordForm);
-
-            // Assert
-            await action.Should().ThrowAsync<Exception>();
-        }
-    }
-
-    [TestFixture]
-    public class ChangePasswordAsync
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private IUserRepository _userRepository;
-        private readonly Guid _userId;
-        private readonly string _oldPassword;
-
-        public ChangePasswordAsync()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-
-            _userId = Guid.NewGuid();
-            _oldPassword = "12345";
-        }
-
-        [SetUp]
-        public async Task Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _userRepository = new UserRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_change_password_when_user_exists()
-        {
-            // Arrange
-            var user = new CreateUserRequest
-            {
-                Username = "UserRegular",
-                Password = _oldPassword,
-                IsAdmin = true,
-                CanAccessOpds = false
-            };
-            var createdUser = await _userRepository.CreateUserAsync(user);
-
-            await _dbContext.SaveChangesAsync();
-            
-            var changePasswordForm = new ChangeUserPasswordRequest
-            {
-                UserId = createdUser.Id,
-                OldPassword = _oldPassword,
-                NewPassword = "987654321",
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            var result = await _userRepository.ChangePasswordAsync(changePasswordForm);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_user_does_not_exist()
-        {
-            // Arrange
-            var changePasswordForm = new ChangeUserPasswordRequest
-            {
-                UserId = Guid.NewGuid(),
-                OldPassword = _oldPassword,
-                NewPassword = "987654321",
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            var result =
-                await _userRepository.ChangePasswordAsync(changePasswordForm);
-
-            // Assert
-            result.Should().BeFalse();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_old_password_is_wrong()
-        {
-            // Arrange
-            var changePasswordForm = new ChangeUserPasswordRequest
-            {
-                UserId = _userId,
-                OldPassword = "wrong-password",
-                NewPassword = "987654321",
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            var result = await _userRepository.ChangePasswordAsync(changePasswordForm);
-
-            // Assert
-            result.Should().BeFalse();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_new_password_is_null()
-        {
-            // Arrange
-            var changePasswordForm = new ChangeUserPasswordRequest
-            {
-                UserId = _userId,
-                OldPassword = _oldPassword,
-                NewPassword = null,
-                NewPasswordConfirmation = "987654321"
-            };
-
-            // Act
-            Func<Task> action = async () =>
-                await _userRepository.ChangePasswordAsync(changePasswordForm);
-
-            // Assert
-            await action.Should().ThrowAsync<Exception>();
-        }
-
-        [Test]
-        public async Task Should_return_exception_when_password_doesnt_match()
-        {
-            // Arrange
-            var changePasswordForm = new ChangeUserPasswordRequest
-            {
-                UserId = _userId,
-                OldPassword = _oldPassword,
-                NewPassword = "987654321",
-                NewPasswordConfirmation = "987654322"
-            };
-
-            // Act
-            Func<Task> action = async () =>
-                await _userRepository.ChangePasswordAsync(changePasswordForm);
-
-            // Assert
-            await action.Should().ThrowAsync<Exception>();
-        }
-    }
-
-    [TestFixture]
-    public class ActivateUserAsync
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private IUserRepository _userRepository;
-        private readonly Guid _userId;
-
-        public ActivateUserAsync()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-
-            _userId = Guid.NewGuid();
-        }
-
-        [SetUp]
-        public async Task Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _userRepository = new UserRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_activate_user_when_user_exists()
-        {
-            // Arrange
-            var user = new User
-            {
-                Id = _userId,
-                Username = "UserRegular",
-                Password = "12345",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
-                IsAdmin = true,
-                LastLogin = DateTime.Now,
-                CanAccessOpds = false
-            };
-            await _dbContext.Users.AddAsync(user);
-
-            await _dbContext.SaveChangesAsync();
             
             // Act
-            var result = await _userRepository.ActivateUserAsync(_userId);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_user_does_not_exist()
-        {
-            // Act
-            var result = await _userRepository.ActivateUserAsync(Guid.NewGuid());
-
-            // Assert
-            result.Should().BeFalse();
-        }
-    }
-
-    [TestFixture]
-    public class DeactivateUserAsync
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private IUserRepository _userRepository;
-        private readonly Guid _userId;
-
-        public DeactivateUserAsync()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-
-            _userId = Guid.NewGuid();
-        }
-
-        [SetUp]
-        public async Task Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _userRepository = new UserRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_deactivate_user_when_user_exists()
-        {
-            // Arrange
-            var user = new User
-            {
-                Id = _userId,
-                Username = "UserRegular",
-                Password = "12345",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
-                IsAdmin = true,
-                LastLogin = DateTime.Now,
-                CanAccessOpds = false
-            };
-            await _dbContext.Users.AddAsync(user);
-
-            await _dbContext.SaveChangesAsync();
-            
-            // Act
-            var result = await _userRepository.DeactivateUserAsync(_userId);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_user_does_not_exist()
-        {
-            // Act
-            var result = await _userRepository.DeactivateUserAsync(Guid.NewGuid());
-
-            // Assert
-            result.Should().BeFalse();
-        }
-    }
-
-    [TestFixture]
-    public class GiveOpdsAccessAsync
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private IUserRepository _userRepository;
-        private readonly Guid _userId;
-
-        public GiveOpdsAccessAsync()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-
-            _userId = Guid.NewGuid();
-        }
-
-        [SetUp]
-        public async Task Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _userRepository = new UserRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_give_opds_access_when_user_exists()
-        {
-            // Arrange
-            var user = new User
-            {
-                Id = _userId,
-                Username = "UserRegular",
-                Password = "12345",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
-                IsAdmin = true,
-                LastLogin = DateTime.Now,
-                CanAccessOpds = false
-            };
-            await _dbContext.Users.AddAsync(user);
-
-            await _dbContext.SaveChangesAsync();
-            
-            // Act
-            var result = await _userRepository.GiveOpdsAccessAsync(_userId);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_user_does_not_exist()
-        {
-            // Act
-            var result = await _userRepository.GiveOpdsAccessAsync(Guid.NewGuid());
-
-            // Assert
-            result.Should().BeFalse();
-        }
-    }
-
-    [TestFixture]
-    public class TakeOpdsAccessAsync
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private IUserRepository _userRepository;
-        private readonly Guid _userId;
-
-        public TakeOpdsAccessAsync()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-
-            _userId = Guid.NewGuid();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _userRepository = new UserRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_take_opds_access_when_user_exists()
-        {
-            // Arrange
-            var user = new User
-            {
-                Id = _userId,
-                Username = "UserRegular",
-                Password = "12345",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true,
-                IsAdmin = true,
-                LastLogin = DateTime.Now,
-                CanAccessOpds = false
-            };
-            await _dbContext.Users.AddAsync(user);
-
-            await _dbContext.SaveChangesAsync();
-            
-            // Act
-            var result = await _userRepository.TakeOpdsAccessAsync(_userId);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public async Task Should_return_false_when_user_does_not_exist()
-        {
-            // Act
-            var result = await _userRepository.TakeOpdsAccessAsync(Guid.NewGuid());
+            var result = await _userRepository.DeleteUserAsync(randomUser);
 
             // Assert
             result.Should().BeFalse();

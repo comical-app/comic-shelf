@@ -1,7 +1,7 @@
-using API.Domain.Commands;
-using API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Models;
+using Models.Commands;
+using Models.Domain;
+using Models.ServicesInterfaces;
 
 namespace API.Controllers;
 
@@ -9,12 +9,12 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IUserService _userService;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(IUserRepository userRepository, ILogger<UserController> logger)
+    public UserController(IUserService userService, ILogger<UserController> logger)
     {
-        _userRepository = userRepository;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -28,7 +28,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(204)]
     public async Task<IActionResult> Get()
     {
-        var users = await _userRepository.ListUsersAsync();
+        var users = await _userService.ListUsersAsync();
 
         if (!users.Any()) return NoContent();
 
@@ -45,7 +45,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<User>), 204)]
     public async Task<IActionResult> GetUsersWithOpdsAccess()
     {
-        var users = await _userRepository.ListUsersWithOpdsAccessAsync();
+        var users = await _userService.ListUsersWithOpdsAccessAsync();
 
         if (!users.Any()) return NoContent();
 
@@ -63,7 +63,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> Get(Guid userId)
     {
-        var user = await _userRepository.GetUserByIdAsync(userId);
+        var user = await _userService.GetUserByIdAsync(userId);
 
         if (user == null)
             return NotFound();
@@ -84,14 +84,14 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _userRepository.CheckIfUsernameIsUniqueAsync(username);
+            var user = await _userService.CheckIfUsernameIsUniqueAsync(username);
 
             return Ok(user);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to check if the username exists");
+            _logger.LogError(e, "Failed to check if username \"{Username}\" is unique. {EMessage}", username, e.Message);
+            return BadRequest($"Failed to check if username \"{username}\" is unique.");
         }
     }
 
@@ -104,18 +104,18 @@ public class UserController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(User), 201)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> Post([FromBody] CreateUserRequest user)
+    public async Task<IActionResult> Post([FromBody] CreateUserCommand user)
     {
         try
         {
-            var result = await _userRepository.CreateUserAsync(user);
+            var result = await _userService.CreateUserAsync(user);
 
             return Created($"/user/{result.Id}", result);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to create user");
+            _logger.LogError(e, "Failed to create user. {EMessage}", e.Message);
+            return BadRequest($"Failed to create user.");
         }
     }
 
@@ -131,25 +131,25 @@ public class UserController : ControllerBase
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> Put(Guid userId, [FromBody] UpdateUserRequest user)
+    public async Task<IActionResult> Put(Guid userId, [FromBody] UpdateUserCommand user)
     {
         try
         {
-            var checkUser = await _userRepository.GetUserByIdAsync(userId);
+            var checkUser = await _userService.GetUserByIdAsync(userId);
 
             if (checkUser == null)
                 return NotFound();
 
-            var result = await _userRepository.UpdateUserAsync(userId, user);
+            var result = await _userService.UpdateUserAsync(userId, user);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to update user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to update user");
+            _logger.LogError(e, "Failed to update user. {EMessage}", e.Message);
+            return BadRequest($"Failed to update user.");
         }
     }
 
@@ -168,21 +168,21 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _userRepository.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId);
 
             if (user == null)
                 return NotFound();
 
-            var result = await _userRepository.DeleteUserAsync(userId);
+            var result = await _userService.DeleteUserAsync(userId);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to delete user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to delete user");
+            _logger.LogError(e, "Failed to delete user. {EMessage}", e.Message);
+            return BadRequest($"Failed to delete user.");
         }
     }
 
@@ -196,25 +196,25 @@ public class UserController : ControllerBase
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> ChangePasswordAsync([FromBody] ChangeUserPasswordRequest request)
+    public async Task<IActionResult> ChangePasswordAsync([FromBody] ChangeUserPasswordCommand command)
     {
         try
         {
-            var user = await _userRepository.GetUserByIdAsync(request.UserId);
+            var user = await _userService.GetUserByIdAsync(command.UserId);
 
             if (user == null)
                 return NotFound();
 
-            var result = await _userRepository.ChangePasswordAsync(request);
+            var result = await _userService.ChangePasswordAsync(command);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to change user password");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to change user password");
+            _logger.LogError(e, "Failed to change user password. {EMessage}", e.Message);
+            return BadRequest($"Failed to change user password.");
         }
     }
 
@@ -228,25 +228,25 @@ public class UserController : ControllerBase
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> ChangePasswordAsync([FromBody] ResetUserPasswordRequest request)
+    public async Task<IActionResult> ChangePasswordAsync([FromBody] ResetUserPasswordCommand command)
     {
         try
         {
-            var user = await _userRepository.GetUserByIdAsync(request.UserId);
+            var user = await _userService.GetUserByIdAsync(command.UserId);
 
             if (user == null)
                 return NotFound();
 
-            var result = await _userRepository.ResetPasswordAsync(request);
+            var result = await _userService.ResetPasswordAsync(command);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to reset user password");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to reset user password");
+            _logger.LogError(e, "Failed to reset user password. {EMessage}", e.Message);
+            return BadRequest($"Failed to reset user password.");
         }
     }
     
@@ -264,21 +264,21 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _userRepository.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId);
 
             if (user == null)
                 return NotFound();
 
-            var result = await _userRepository.ActivateUserAsync(userId);
+            var result = await _userService.ActivateUserAsync(userId);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to activate user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to activate user");
+            _logger.LogError(e, "Failed to activate user. {EMessage}", e.Message);
+            return BadRequest($"Failed to activate user.");
         }
     }
 
@@ -296,21 +296,21 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _userRepository.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId);
 
             if (user == null)
                 return NotFound();
 
-            var result = await _userRepository.DeactivateUserAsync(userId);
+            var result = await _userService.DeactivateUserAsync(userId);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to deactivate user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to deactivate user");
+            _logger.LogError(e, "Failed to deactivate user. {EMessage}", e.Message);
+            return BadRequest($"Failed to deactivate user.");
         }
     }
     
@@ -328,21 +328,21 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _userRepository.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId);
 
             if (user == null)
                 return NotFound();
 
-            var result = await _userRepository.GiveOpdsAccessAsync(userId);
+            var result = await _userService.GiveOpdsAccessAsync(userId);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to give odps access");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to give odps access");
+            _logger.LogError(e, "Failed to give odps access. {EMessage}", e.Message);
+            return BadRequest($"Failed to give odps access.");
         }
     }
     
@@ -360,21 +360,21 @@ public class UserController : ControllerBase
     {
         try
         {
-            var user = await _userRepository.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId);
 
             if (user == null)
                 return NotFound();
 
-            var result = await _userRepository.TakeOpdsAccessAsync(userId);
+            var result = await _userService.TakeOpdsAccessAsync(userId);
 
             if (result) return NoContent();
 
             return BadRequest("Fail to take ODPS access");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to take ODPS access");
+            _logger.LogError(e, "Failed to take ODPS access. {EMessage}", e.Message);
+            return BadRequest($"Failed to take ODPS access.");
         }
     }
 }
