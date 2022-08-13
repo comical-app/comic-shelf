@@ -1,9 +1,8 @@
-using API.Domain.Commands;
-using API.Interfaces;
 using Infra.Helpers;
 using Microsoft.AspNetCore.Mvc;
-using Models;
-using File = Models.File;
+using Models.Commands;
+using Models.Domain;
+using Models.ServicesInterfaces;
 
 namespace API.Controllers;
 
@@ -11,16 +10,16 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class LibraryController : ControllerBase
 {
-    private readonly IFileRepository _fileRepository;
-    private readonly ILibraryRepository _libraryRepository;
+    private readonly IFileService _fileService;
+    private readonly ILibraryService _libraryService;
     private readonly ILogger<LibraryController> _logger;
 
-    public LibraryController(IFileRepository fileRepository,
-        ILogger<LibraryController> logger, ILibraryRepository libraryRepository)
+    public LibraryController(IFileService fileService,
+        ILogger<LibraryController> logger, ILibraryService libraryService)
     {
-        _fileRepository = fileRepository;
+        _fileService = fileService;
         _logger = logger;
-        _libraryRepository = libraryRepository;
+        _libraryService = libraryService;
     }
 
     /// <summary>
@@ -33,7 +32,7 @@ public class LibraryController : ControllerBase
     [ProducesResponseType(204)]
     public async Task<IActionResult> Get()
     {
-        var libraries = await _libraryRepository.ListLibrariesAsync();
+        var libraries = await _libraryService.ListLibrariesAsync();
 
         if (!libraries.Any()) return NoContent();
 
@@ -51,7 +50,7 @@ public class LibraryController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> Get(Guid libraryId)
     {
-        var library = await _libraryRepository.GetLibraryByIdAsync(libraryId);
+        var library = await _libraryService.GetLibraryByIdAsync(libraryId);
 
         if (library == null)
             return NotFound();
@@ -66,16 +65,16 @@ public class LibraryController : ControllerBase
     /// <response code="200">files retrieved</response>
     /// <response code="404">Library not found</response>
     [HttpGet("{libraryId:guid}/files")]
-    [ProducesResponseType(typeof(IEnumerable<File>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<ComicFile>), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetFilesByLibraryId(Guid libraryId)
     {
-        var library = await _libraryRepository.GetLibraryByIdAsync(libraryId);
+        var library = await _libraryService.GetLibraryByIdAsync(libraryId);
         
         if (library == null)
             return NotFound();
 
-        var files = await _fileRepository.ReturnFilesByLibraryIdAsync(libraryId);
+        var files = await _fileService.ReturnFilesByLibraryIdAsync(libraryId);
 
         return Ok(files);
     }
@@ -92,7 +91,7 @@ public class LibraryController : ControllerBase
     {
         try
         {
-            var library = await _libraryRepository.CheckLibraryNameIsUniqueAsync(libraryName);
+            var library = await _libraryService.CheckLibraryNameIsUniqueAsync(libraryName);
 
             return Ok(library);
         }
@@ -115,7 +114,7 @@ public class LibraryController : ControllerBase
     {
         try
         {
-            var library = await _libraryRepository.CheckLibraryPathIsUniqueAsync(libraryPath);
+            var library = await _libraryService.CheckLibraryPathIsUniqueAsync(libraryPath);
 
             return Ok(library);
         }
@@ -135,11 +134,11 @@ public class LibraryController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(Library), 201)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> Post([FromBody] CreateLibraryRequest library)
+    public async Task<IActionResult> Post([FromBody] CreateLibraryCommand library)
     {
         try
         {
-            var result = await _libraryRepository.CreateLibraryAsync(library);
+            var result = await _libraryService.CreateLibraryAsync(library);
 
             return Created($"/library/{result.Id}", result);
         }
@@ -162,16 +161,16 @@ public class LibraryController : ControllerBase
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> Put(Guid libraryId, [FromBody] UpdateLibraryRequest library)
+    public async Task<IActionResult> Put(Guid libraryId, [FromBody] UpdateLibraryCommand library)
     {
         try
         {
-            var checkLibrary = await _libraryRepository.GetLibraryByIdAsync(libraryId);
+            var checkLibrary = await _libraryService.GetLibraryByIdAsync(libraryId);
 
             if (checkLibrary == null)
                 return NotFound();
 
-            var result = await _libraryRepository.UpdateLibraryAsync(libraryId, library);
+            var result = await _libraryService.UpdateLibraryAsync(libraryId, library);
 
             if (result) return NoContent();
 
@@ -199,12 +198,12 @@ public class LibraryController : ControllerBase
     {
         try
         {
-            var library = await _libraryRepository.GetLibraryByIdAsync(libraryId);
+            var library = await _libraryService.GetLibraryByIdAsync(libraryId);
 
             if (library == null)
                 return NotFound();
 
-            var result = await _libraryRepository.DeleteLibraryAsync(libraryId);
+            var result = await _libraryService.DeleteLibraryAsync(libraryId);
 
             if (result) return NoContent();
 
@@ -232,12 +231,12 @@ public class LibraryController : ControllerBase
     {
         try
         {
-            var library = await _libraryRepository.GetLibraryByIdAsync(libraryId);
+            var library = await _libraryService.GetLibraryByIdAsync(libraryId);
         
             if (library == null)
                 return NotFound();
             
-            await _libraryRepository.UpdateLastScanDate(libraryId);
+            await _libraryService.UpdateLastScanDate(libraryId);
             
             var newFilesCount = 0;
             var sourceDirectory = library.Path;
@@ -248,7 +247,7 @@ public class LibraryController : ControllerBase
 
             foreach (var currentFile in enumerateFiles)
             {
-                var file = new File();
+                var file = new ComicFile();
                 var fileInfo = new FileInfo(currentFile);
 
                 file.Name = fileInfo.Name;
@@ -256,12 +255,12 @@ public class LibraryController : ControllerBase
                 file.Extension = Path.GetExtension(currentFile);
                 file.MimeType = FileHelpers.GetMimeTypeFromExtension(file.Extension);
                 file.Size = fileInfo.Length;
-                file.LastModifiedDate = fileInfo.LastWriteTime;
+                file.UpdatedAt = fileInfo.LastWriteTime;
                 file.LibraryId = library.Id;
 
-                if (await _fileRepository.GetFileByNameAsync(file.Name) != null) continue;
+                if (await _fileService.GetFileByNameAsync(file.Name) != null) await _fileService.SetFileToBeAnalyzedAsync(file.Name);
 
-                await _fileRepository.SaveAsync(file);
+                await _fileService.SaveFileAsync(file);
                 newFilesCount++;
             }
 

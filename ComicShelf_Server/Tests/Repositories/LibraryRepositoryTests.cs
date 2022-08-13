@@ -1,12 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using API.Context;
-using API.Domain.Commands;
-using API.Interfaces;
-using API.Repositories;
 using FluentAssertions;
+using Infra.Context;
+using Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Models;
+using Models.Domain;
+using Models.RepositoryInterfaces;
 using NUnit.Framework;
 
 namespace Tests.Repositories;
@@ -331,11 +330,11 @@ public class LibraryRepositoryTests
         public async Task Should_create_library()
         {
             // Arrange
-            var newLibrary = new CreateLibraryRequest
+            var newLibrary = new Library()
             {
                 Name = "Comic Book Library",
                 Path = @"C:\Comics",
-                AcceptedExtensions = new[] {"rar, zip"}
+                AcceptedExtensions = "7z"
             };
 
             // Act
@@ -368,11 +367,11 @@ public class LibraryRepositoryTests
             await _dbContext.Libraries.AddAsync(library);
             await _dbContext.SaveChangesAsync();
 
-            var newLibrary = new CreateLibraryRequest
+            var newLibrary = new Library
             {
                 Name = library.Name,
                 Path = library.Path,
-                AcceptedExtensions = new[] {"rar, zip"}
+                AcceptedExtensions = "7z"
             };
 
             // Act
@@ -433,15 +432,15 @@ public class LibraryRepositoryTests
 
             await _dbContext.SaveChangesAsync();
 
-            var library = new UpdateLibraryRequest
+            var library = new Library()
             {
                 Name = "My Comic Library",
                 Path = @"C:\Comics folder",
-                AcceptedExtensions = new[] {"7z"}
+                AcceptedExtensions = "7z"
             };
 
             // Act
-            await _libraryRepository.UpdateLibraryAsync(_libraryId, library);
+            await _libraryRepository.UpdateLibraryAsync(library);
             var result = await _libraryRepository.GetLibraryByIdAsync(_libraryId);
 
             // Assert
@@ -459,7 +458,7 @@ public class LibraryRepositoryTests
         public async Task Should_throw_exception_when_library_is_null()
         {
             // Act
-            Func<Task> result = async () => { await _libraryRepository.UpdateLibraryAsync(_libraryId, null); };
+            Func<Task> result = async () => { await _libraryRepository.UpdateLibraryAsync(null); };
 
             // Assert
             await result.Should().ThrowAsync<Exception>();
@@ -469,15 +468,15 @@ public class LibraryRepositoryTests
         public async Task Should_throw_exception_when_library_does_not_exist()
         {
             // Arrange
-            var library = new UpdateLibraryRequest
+            var library = new Library
             {
                 Name = "My Comic Library",
                 Path = @"C:\Comics folder",
-                AcceptedExtensions = new[] {"7z"}
+                AcceptedExtensions = "7z"
             };
 
             // Act
-            var result = await _libraryRepository.UpdateLibraryAsync(Guid.NewGuid(), library);
+            var result = await _libraryRepository.UpdateLibraryAsync(library);
 
             // Assert
             result.Should().BeFalse();
@@ -491,6 +490,7 @@ public class LibraryRepositoryTests
         private DatabaseContext _dbContext;
         private ILibraryRepository _libraryRepository;
         private readonly Guid _libraryId;
+        private Library _library;
 
         public DeleteLibraryAsync()
         {
@@ -507,7 +507,7 @@ public class LibraryRepositoryTests
             _libraryRepository = new LibraryRepository(_dbContext);
 
             // Create a library
-            var library = new Library
+            _library = new Library
             {
                 Id = _libraryId,
                 Name = "Test Library",
@@ -515,7 +515,7 @@ public class LibraryRepositoryTests
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
-            await _dbContext.Libraries.AddAsync(library);
+            await _dbContext.Libraries.AddAsync(_library);
 
             await _dbContext.SaveChangesAsync();
         }
@@ -524,7 +524,7 @@ public class LibraryRepositoryTests
         public async Task Should_delete_library()
         {
             // Act
-            await _libraryRepository.DeleteLibraryAsync(_libraryId);
+            await _libraryRepository.DeleteLibraryAsync(_library);
             var result = await _libraryRepository.GetLibraryByIdAsync(_libraryId);
 
             // Assert
@@ -534,43 +534,8 @@ public class LibraryRepositoryTests
         [Test]
         public async Task Should_return_false_when_library_does_not_exist()
         {
-            // Act
-            var result = await _libraryRepository.DeleteLibraryAsync(Guid.NewGuid());
-
-            // Assert
-            result.Should().BeFalse();
-        }
-    }
-
-    [TestFixture]
-    public class UpdateLastScanDate
-    {
-        private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
-        private DatabaseContext _dbContext;
-        private ILibraryRepository _libraryRepository;
-        private readonly Guid _libraryId;
-
-        public UpdateLastScanDate()
-        {
-            _dbContextOptions = new DbContextOptionsBuilder<DatabaseContext>()
-                .UseInMemoryDatabase($"TestsDb_{DateTime.Now.ToFileTimeUtc()}")
-                .Options;
-            _libraryId = Guid.NewGuid();
-        }
-
-        [SetUp]
-        public async Task Setup()
-        {
-            _dbContext = new DatabaseContext(_dbContextOptions);
-            _libraryRepository = new LibraryRepository(_dbContext);
-        }
-
-        [Test]
-        public async Task Should_update_last_scan_date()
-        {
             // Arrange
-            var date = DateTime.Now;
-            var library = new Library
+            var randomLibrary = new Library
             {
                 Id = Guid.NewGuid(),
                 Name = "Test Library",
@@ -578,27 +543,12 @@ public class LibraryRepositoryTests
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
-            await _dbContext.Libraries.AddAsync(library);
-
-            await _dbContext.SaveChangesAsync();
-
+            
             // Act
-            await _libraryRepository.UpdateLastScanDate(library.Id);
-            var result = await _libraryRepository.GetLibraryByIdAsync(library.Id);
+            var result = await _libraryRepository.DeleteLibraryAsync(randomLibrary);
 
             // Assert
-            result.Should().NotBeNull();
-            result?.LastScan.Should().BeAfter(date);
-        }
-
-        [Test]
-        public async Task Should_throw_exception_when_library_does_not_exist()
-        {
-            // Act
-            Func<Task> result = async () => { await _libraryRepository.UpdateLastScanDate(Guid.NewGuid()); };
-
-            // Assert
-            await result.Should().ThrowAsync<Exception>();
+            result.Should().BeFalse();
         }
     }
 }

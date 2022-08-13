@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using API.Context;
-using API.Interfaces;
-using API.Repositories;
 using FluentAssertions;
+using Infra.Context;
+using Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Models;
+using Models.Domain;
+using Models.RepositoryInterfaces;
 using NUnit.Framework;
 
 namespace Tests.Repositories;
@@ -38,7 +38,7 @@ public class FileRepositoryTests
         public async Task Should_save_file_to_database()
         {
             // Arrange
-            var newFile = new File
+            var newFile = new ComicFile
             {
                 Name = "TestFile",
                 Path = "TestPath",
@@ -48,7 +48,7 @@ public class FileRepositoryTests
             };
             
             // Act
-            var file = await _fileRepository.SaveAsync(newFile);
+            var file = await _fileRepository.SaveFileAsync(newFile);
             var result = await _fileRepository.GetFileByIdAsync(file.Id);
 
             // Assert
@@ -91,7 +91,7 @@ public class FileRepositoryTests
         public async Task Should_return_valid_file()
         {
             // Arrange
-            var file = new File
+            var file = new ComicFile
             {
                 Id = _fileId,
                 Name = "file1.cbz",
@@ -100,7 +100,7 @@ public class FileRepositoryTests
                 MimeType = "application/x-cbz",
                 Size = 100
             };
-            await _dbContext.Files.AddAsync(file);
+            await _dbContext.ComicFiles.AddAsync(file);
 
             await _dbContext.SaveChangesAsync();
 
@@ -159,7 +159,7 @@ public class FileRepositoryTests
         public async Task Should_return_valid_file()
         {
             // Arrange
-            var file = new File
+            var file = new ComicFile
             {
                 Id = _fileId,
                 Name = "file1.cbz",
@@ -168,7 +168,7 @@ public class FileRepositoryTests
                 MimeType = "application/x-cbz",
                 Size = 100
             };
-            await _dbContext.Files.AddAsync(file);
+            await _dbContext.ComicFiles.AddAsync(file);
 
             await _dbContext.SaveChangesAsync();
 
@@ -220,32 +220,32 @@ public class FileRepositoryTests
             _fileRepository = new FileRepository(_dbContext);
 
             // File 1
-            var file1 = new File
+            var file1 = new ComicFile
             {
                 Id = Guid.NewGuid(),
                 Name = "",
                 Extension = "cbz",
                 Path = "",
                 Size = 100,
-                AddedAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
                 MimeType = "",
-                LastModifiedDate = DateTime.Now
+                UpdatedAt = DateTime.Now
             };
-            await _dbContext.Files.AddAsync(file1);
+            await _dbContext.ComicFiles.AddAsync(file1);
 
             // File 2
-            var file2 = new File
+            var file2 = new ComicFile
             {
                 Id = Guid.NewGuid(),
                 Name = "",
                 Extension = "zip",
                 Path = "",
                 Size = 100,
-                AddedAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
                 MimeType = "",
-                LastModifiedDate = DateTime.Now
+                UpdatedAt = DateTime.Now
             };
-            await _dbContext.Files.AddAsync(file2);
+            await _dbContext.ComicFiles.AddAsync(file2);
 
             await _dbContext.SaveChangesAsync();
         }
