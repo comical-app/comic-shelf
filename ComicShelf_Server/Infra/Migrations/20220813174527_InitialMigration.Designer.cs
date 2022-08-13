@@ -8,31 +8,37 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace API.Migrations
+namespace Infra.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20220807153950_FixTableNames")]
-    partial class FixTableNames
+    [Migration("20220813174527_InitialMigration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.7");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
 
-            modelBuilder.Entity("Models.File", b =>
+            modelBuilder.Entity("Models.Domain.ComicFile", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("AddedAt")
+                    b.Property<bool>("Analysed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Extension")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("LastModifiedDate")
+                    b.Property<bool>("HasComicInfoFile")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("LibraryId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("MimeType")
@@ -46,15 +52,23 @@ namespace API.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("Scraped")
+                        .HasColumnType("INTEGER");
+
                     b.Property<long>("Size")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.ToTable("File");
+                    b.HasIndex("LibraryId");
+
+                    b.ToTable("ComicFile");
                 });
 
-            modelBuilder.Entity("Models.Library", b =>
+            modelBuilder.Entity("Models.Domain.Library", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -64,15 +78,25 @@ namespace API.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastScan")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Path")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -80,7 +104,7 @@ namespace API.Migrations
                     b.ToTable("Library");
                 });
 
-            modelBuilder.Entity("Models.User", b =>
+            modelBuilder.Entity("Models.Domain.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -116,6 +140,20 @@ namespace API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("User");
+                });
+
+            modelBuilder.Entity("Models.Domain.ComicFile", b =>
+                {
+                    b.HasOne("Models.Domain.Library", null)
+                        .WithMany("Files")
+                        .HasForeignKey("LibraryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Models.Domain.Library", b =>
+                {
+                    b.Navigation("Files");
                 });
 #pragma warning restore 612, 618
         }
