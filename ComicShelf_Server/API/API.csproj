@@ -21,10 +21,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Infra\Infra.csproj" />
       <ProjectReference Include="..\Models\Models.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Domain\Responses" />
+      <ProjectReference Include="..\Services\Services.csproj" />
     </ItemGroup>
 
 </Project>

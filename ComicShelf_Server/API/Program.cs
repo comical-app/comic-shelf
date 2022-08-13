@@ -1,9 +1,11 @@
-using API.Context;
-using API.Interfaces;
-using API.Repositories;
+using Infra.Context;
+using Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Models;
+using Models.Domain;
+using Models.RepositoryInterfaces;
+using Models.ServicesInterfaces;
+using Services;
 
 var builder = WebApplication.CreateBuilder(args);
 const string serviceName = "ComicShelf";
@@ -25,6 +27,9 @@ builder.Services.Configure<LibrariesConfig>(builder.Configuration.GetSection("Li
 builder.Services.AddTransient<IFileRepository, FileRepository>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
 builder.Services.AddTransient<ILibraryRepository, LibraryRepository>();
+builder.Services.AddTransient<IFileService, FileService>();
+builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<ILibraryService, LibraryService>();
 
 var app = builder.Build();
 
