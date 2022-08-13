@@ -10,14 +10,14 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class LibraryController : ControllerBase
 {
-    private readonly IFileService _fileService;
+    private readonly IComicFileService _comicFileService;
     private readonly ILibraryService _libraryService;
     private readonly ILogger<LibraryController> _logger;
 
-    public LibraryController(IFileService fileService,
+    public LibraryController(IComicFileService comicFileService,
         ILogger<LibraryController> logger, ILibraryService libraryService)
     {
-        _fileService = fileService;
+        _comicFileService = comicFileService;
         _logger = logger;
         _libraryService = libraryService;
     }
@@ -74,7 +74,7 @@ public class LibraryController : ControllerBase
         if (library == null)
             return NotFound();
 
-        var files = await _fileService.ReturnFilesByLibraryIdAsync(libraryId);
+        var files = await _comicFileService.ReturnFilesByLibraryIdAsync(libraryId);
 
         return Ok(files);
     }
@@ -95,10 +95,10 @@ public class LibraryController : ControllerBase
 
             return Ok(library);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to check if the library with given name exists");
+            _logger.LogError(e, "Failed to check if library with name \"{LibraryName}\" exists. {EMessage}", libraryName, e.Message);
+            return BadRequest($"Failed to check if library with name \"{libraryName}\" exists.");
         }
     }
 
@@ -118,10 +118,10 @@ public class LibraryController : ControllerBase
 
             return Ok(library);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to check if the library with given path exists");
+            _logger.LogError(e, "Failed to check if library with path \"{LibraryPath}\" exists. {EMessage}", libraryPath, e.Message);
+            return BadRequest($"Failed to check if library with path \"{libraryPath}\" exists.");
         }
     }
 
@@ -142,9 +142,9 @@ public class LibraryController : ControllerBase
 
             return Created($"/library/{result.Id}", result);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(e, "Failed to create library. {EMessage}", e.Message);
             return BadRequest("Fail to create library");
         }
     }
@@ -176,9 +176,9 @@ public class LibraryController : ControllerBase
 
             return BadRequest("Fail to update library");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(e, "Failed to update library. {EMessage}", e.Message);
             return BadRequest("Fail to update library");
         }
     }
@@ -209,9 +209,9 @@ public class LibraryController : ControllerBase
 
             return BadRequest("Fail to delete library");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(e, "Failed to delete library. {EMessage}", e.Message);
             return BadRequest("Fail to delete library");
         }
     }
@@ -258,17 +258,17 @@ public class LibraryController : ControllerBase
                 file.UpdatedAt = fileInfo.LastWriteTime;
                 file.LibraryId = library.Id;
 
-                if (await _fileService.GetFileByNameAsync(file.Name) != null) await _fileService.SetFileToBeAnalyzedAsync(file.Name);
+                if (await _comicFileService.GetFileByNameAsync(file.Name) != null) await _comicFileService.SetFileToBeAnalyzedAsync(file.Name);
 
-                await _fileService.SaveFileAsync(file);
+                await _comicFileService.SaveFileAsync(file);
                 newFilesCount++;
             }
 
             return Ok(newFilesCount == 0 ? "No new file added" : $"{newFilesCount} new files added");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(e, "Failed to scan library. {EMessage}", e.Message);
             return BadRequest("Fail to scan library");
         }
     }

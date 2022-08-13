@@ -5,11 +5,11 @@ using Models.RepositoryInterfaces;
 
 namespace Infra.Repositories;
 
-public class FileRepository : IFileRepository
+public class ComicFileRepository : IComicFileRepository
 {
     private readonly DatabaseContext _context;
 
-    public FileRepository(DatabaseContext context)
+    public ComicFileRepository(DatabaseContext context)
     {
         _context = context;
     }

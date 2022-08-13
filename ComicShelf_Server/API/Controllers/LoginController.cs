@@ -37,9 +37,9 @@ public class LoginController : ControllerBase
 
             return Ok(userLogin);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError(e, "Fail to login. {EMessage}", e.Message);
             return BadRequest("An error occurred while trying to login");
         }
     }

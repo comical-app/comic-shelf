@@ -88,10 +88,10 @@ public class UserController : ControllerBase
 
             return Ok(user);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to check if the username exists");
+            _logger.LogError(e, "Failed to check if username \"{Username}\" is unique. {EMessage}", username, e.Message);
+            return BadRequest($"Failed to check if username \"{username}\" is unique.");
         }
     }
 
@@ -112,10 +112,10 @@ public class UserController : ControllerBase
 
             return Created($"/user/{result.Id}", result);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to create user");
+            _logger.LogError(e, "Failed to create user. {EMessage}", e.Message);
+            return BadRequest($"Failed to create user.");
         }
     }
 
@@ -146,10 +146,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to update user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to update user");
+            _logger.LogError(e, "Failed to update user. {EMessage}", e.Message);
+            return BadRequest($"Failed to update user.");
         }
     }
 
@@ -179,10 +179,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to delete user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to delete user");
+            _logger.LogError(e, "Failed to delete user. {EMessage}", e.Message);
+            return BadRequest($"Failed to delete user.");
         }
     }
 
@@ -211,10 +211,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to change user password");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to change user password");
+            _logger.LogError(e, "Failed to change user password. {EMessage}", e.Message);
+            return BadRequest($"Failed to change user password.");
         }
     }
 
@@ -243,10 +243,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to reset user password");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to reset user password");
+            _logger.LogError(e, "Failed to reset user password. {EMessage}", e.Message);
+            return BadRequest($"Failed to reset user password.");
         }
     }
     
@@ -275,10 +275,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to activate user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to activate user");
+            _logger.LogError(e, "Failed to activate user. {EMessage}", e.Message);
+            return BadRequest($"Failed to activate user.");
         }
     }
 
@@ -307,10 +307,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to deactivate user");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to deactivate user");
+            _logger.LogError(e, "Failed to deactivate user. {EMessage}", e.Message);
+            return BadRequest($"Failed to deactivate user.");
         }
     }
     
@@ -339,10 +339,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to give odps access");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to give odps access");
+            _logger.LogError(e, "Failed to give odps access. {EMessage}", e.Message);
+            return BadRequest($"Failed to give odps access.");
         }
     }
     
@@ -371,10 +371,10 @@ public class UserController : ControllerBase
 
             return BadRequest("Fail to take ODPS access");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            _logger.LogError(ex.Message);
-            return BadRequest("Fail to take ODPS access");
+            _logger.LogError(e, "Failed to take ODPS access. {EMessage}", e.Message);
+            return BadRequest($"Failed to take ODPS access.");
         }
     }
 }

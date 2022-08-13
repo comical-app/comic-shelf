@@ -1,12 +1,10 @@
 using Models.Domain;
 
-namespace Models.RepositoryInterfaces;
+namespace Models.ServicesInterfaces;
 
-public interface IFileRepository
+public interface IComicFileService
 {
     Task<ComicFile> SaveFileAsync(ComicFile comicFile);
-
-    Task<ComicFile> UpdateFileAsync(ComicFile comicFile);
 
     Task<ComicFile?> GetFileByNameAsync(string filename);
 
@@ -17,4 +15,8 @@ public interface IFileRepository
     Task<IEnumerable<ComicFile>> ReturnFilesByLibraryIdAsync(Guid libraryId);
 
     Task<bool> CheckFileExistsByFilenameAsync(string filename);
+    
+    Task SetFileToBeAnalyzedAsync(string filename);
+    
+    Task SetFileAsAnalyzedAsync(string filename);
 }

@@ -5,15 +5,15 @@ using Models.ServicesInterfaces;
 
 namespace Services;
 
-public class FileService : IFileService
+public class ComicFileService : IComicFileService
 {
-    private readonly ILogger<FileService> _logger;
-    private readonly IFileRepository _fileRepository;
+    private readonly ILogger<ComicFileService> _logger;
+    private readonly IComicFileRepository _comicFileRepository;
     private readonly ILibraryService _libraryService;
 
-    public FileService(IFileRepository fileRepository, ILibraryService libraryService, ILogger<FileService> logger)
+    public ComicFileService(IComicFileRepository comicFileRepository, ILibraryService libraryService, ILogger<ComicFileService> logger)
     {
-        _fileRepository = fileRepository;
+        _comicFileRepository = comicFileRepository;
         _libraryService = libraryService;
         _logger = logger;
     }
@@ -24,7 +24,7 @@ public class FileService : IFileService
         {
             if (await CheckFileExistsByFilenameAsync(comicFile.Name)) throw new Exception("File already exists");
 
-            return await _fileRepository.SaveFileAsync(comicFile);
+            return await _comicFileRepository.SaveFileAsync(comicFile);
         }
         catch (Exception e)
         {
@@ -37,7 +37,7 @@ public class FileService : IFileService
     {
         try
         {
-            return await _fileRepository.GetFileByNameAsync(filename);
+            return await _comicFileRepository.GetFileByNameAsync(filename);
         }
         catch (Exception e)
         {
@@ -50,7 +50,7 @@ public class FileService : IFileService
     {
         try
         {
-            return await _fileRepository.GetFileByIdAsync(fileId);
+            return await _comicFileRepository.GetFileByIdAsync(fileId);
         }
         catch (Exception e)
         {
@@ -63,7 +63,7 @@ public class FileService : IFileService
     {
         try
         {
-            return await _fileRepository.ReturnFilesAsync();
+            return await _comicFileRepository.ReturnFilesAsync();
         }
         catch (Exception e)
         {
@@ -79,7 +79,7 @@ public class FileService : IFileService
             var library = await _libraryService.GetLibraryByIdAsync(libraryId);
             if (library == null) throw new Exception("Library not found");
 
-            return await _fileRepository.ReturnFilesByLibraryIdAsync(libraryId);
+            return await _comicFileRepository.ReturnFilesByLibraryIdAsync(libraryId);
         }
         catch (Exception e)
         {
@@ -94,7 +94,7 @@ public class FileService : IFileService
         {
             if (string.IsNullOrWhiteSpace(filename)) throw new ArgumentException("Filename cannot be empty");
 
-            return await _fileRepository.CheckFileExistsByFilenameAsync(filename);
+            return await _comicFileRepository.CheckFileExistsByFilenameAsync(filename);
         }
         catch (Exception e)
         {
@@ -112,7 +112,7 @@ public class FileService : IFileService
 
             file.Analysed = false;
 
-            await _fileRepository.UpdateFileAsync(file);
+            await _comicFileRepository.UpdateFileAsync(file);
         }
         catch (Exception e)
         {
@@ -130,7 +130,7 @@ public class FileService : IFileService
 
             file.Analysed = true;
 
-            await _fileRepository.UpdateFileAsync(file);
+            await _comicFileRepository.UpdateFileAsync(file);
         }
         catch (Exception e)
         {

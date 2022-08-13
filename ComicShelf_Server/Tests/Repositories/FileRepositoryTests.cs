@@ -18,7 +18,7 @@ public class FileRepositoryTests
     {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
-        private IFileRepository _fileRepository;
+        private IComicFileRepository _comicFileRepository;
 
         public SaveAsync()
         {
@@ -31,7 +31,7 @@ public class FileRepositoryTests
         public void Setup()
         {
             _dbContext = new DatabaseContext(_dbContextOptions);
-            _fileRepository = new FileRepository(_dbContext);
+            _comicFileRepository = new ComicFileRepository(_dbContext);
         }
         
         [Test]
@@ -48,8 +48,8 @@ public class FileRepositoryTests
             };
             
             // Act
-            var file = await _fileRepository.SaveFileAsync(newFile);
-            var result = await _fileRepository.GetFileByIdAsync(file.Id);
+            var file = await _comicFileRepository.SaveFileAsync(newFile);
+            var result = await _comicFileRepository.GetFileByIdAsync(file.Id);
 
             // Assert
             result.Should().NotBeNull();
@@ -68,7 +68,7 @@ public class FileRepositoryTests
     {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
-        private IFileRepository _fileRepository;
+        private IComicFileRepository _comicFileRepository;
         private readonly Guid _fileId;
 
         public GetFileByNameAsync()
@@ -84,7 +84,7 @@ public class FileRepositoryTests
         public void Setup()
         {
             _dbContext = new DatabaseContext(_dbContextOptions);
-            _fileRepository = new FileRepository(_dbContext);
+            _comicFileRepository = new ComicFileRepository(_dbContext);
         }
 
         [Test]
@@ -105,7 +105,7 @@ public class FileRepositoryTests
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var result = await _fileRepository.GetFileByNameAsync(file.Name);
+            var result = await _comicFileRepository.GetFileByNameAsync(file.Name);
 
             // Assert
             result.Should().NotBeNull();
@@ -124,7 +124,7 @@ public class FileRepositoryTests
         public async Task Should_return_null_when_file_not_found()
         {
             // Act
-            var result = await _fileRepository.GetFileByNameAsync("Testing name");
+            var result = await _comicFileRepository.GetFileByNameAsync("Testing name");
 
             // Assert
             result.Should().BeNull();
@@ -136,7 +136,7 @@ public class FileRepositoryTests
     {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
-        private IFileRepository _fileRepository;
+        private IComicFileRepository _comicFileRepository;
         private readonly Guid _fileId;
 
         public GetFileByIdAsync()
@@ -152,7 +152,7 @@ public class FileRepositoryTests
         public void Setup()
         {
             _dbContext = new DatabaseContext(_dbContextOptions);
-            _fileRepository = new FileRepository(_dbContext);
+            _comicFileRepository = new ComicFileRepository(_dbContext);
         }
 
         [Test]
@@ -173,7 +173,7 @@ public class FileRepositoryTests
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var result = await _fileRepository.GetFileByIdAsync(_fileId);
+            var result = await _comicFileRepository.GetFileByIdAsync(_fileId);
 
             // Assert
             result.Should().NotBeNull();
@@ -192,7 +192,7 @@ public class FileRepositoryTests
         public async Task Should_return_null_when_file_not_found()
         {
             // Act
-            var result = await _fileRepository.GetFileByIdAsync(Guid.NewGuid());
+            var result = await _comicFileRepository.GetFileByIdAsync(Guid.NewGuid());
 
             // Assert
             result.Should().BeNull();
@@ -204,7 +204,7 @@ public class FileRepositoryTests
     {
         private readonly DbContextOptions<DatabaseContext> _dbContextOptions;
         private DatabaseContext _dbContext;
-        private IFileRepository _fileRepository;
+        private IComicFileRepository _comicFileRepository;
 
         public ReturnFilesAsync()
         {
@@ -217,7 +217,7 @@ public class FileRepositoryTests
         public async Task Setup()
         {
             _dbContext = new DatabaseContext(_dbContextOptions);
-            _fileRepository = new FileRepository(_dbContext);
+            _comicFileRepository = new ComicFileRepository(_dbContext);
 
             // File 1
             var file1 = new ComicFile
@@ -254,7 +254,7 @@ public class FileRepositoryTests
         public async Task Should_return_all_files()
         {
             // Act
-            var users = await _fileRepository.ReturnFilesAsync();
+            var users = await _comicFileRepository.ReturnFilesAsync();
 
             // Assert
             users.Should().HaveCount(2);
