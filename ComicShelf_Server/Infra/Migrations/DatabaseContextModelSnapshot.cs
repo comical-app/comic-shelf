@@ -36,6 +36,9 @@ namespace Infra.Migrations
                     b.Property<bool>("HasComicInfoFile")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid>("LibraryFolderId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("LibraryId")
                         .HasColumnType("TEXT");
 
@@ -90,16 +93,38 @@ namespace Infra.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Path")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.ToTable("Library");
+                });
+
+            modelBuilder.Entity("Models.Domain.LibraryFolder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastScanAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("LibraryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LibraryId");
+
+                    b.ToTable("LibraryFolders");
                 });
 
             modelBuilder.Entity("Models.Domain.User", b =>
@@ -149,9 +174,20 @@ namespace Infra.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Models.Domain.LibraryFolder", b =>
+                {
+                    b.HasOne("Models.Domain.Library", null)
+                        .WithMany("Folders")
+                        .HasForeignKey("LibraryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Models.Domain.Library", b =>
                 {
                     b.Navigation("Files");
+
+                    b.Navigation("Folders");
                 });
 #pragma warning restore 612, 618
         }

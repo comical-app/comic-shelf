@@ -10,11 +10,15 @@ public interface ILibraryRepository
     
     Task<bool> CheckLibraryNameIsUniqueAsync(string libraryName);
     
-    Task<bool> CheckLibraryPathIsUniqueAsync(string libraryPath);
+    Task<bool> CheckLibraryFolderPathIsUniqueAsync(string libraryPath);
 
     Task<Library> CreateLibraryAsync(Library library);
     
     Task<bool> UpdateLibraryAsync(Library library);
     
     Task<bool> DeleteLibraryAsync(Library library);
+    
+    Task<bool> UpdateLibraryFolderAsync(LibraryFolder libraryFolder);
+    
+    Task<bool> DeleteLibraryFolderAsync(LibraryFolder libraryFolder);
 }

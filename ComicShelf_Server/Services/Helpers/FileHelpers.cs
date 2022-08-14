@@ -1,4 +1,4 @@
-namespace Infra.Helpers;
+namespace Services.Helpers;
 
 public static class FileHelpers
 {
@@ -28,11 +28,17 @@ public static class FileHelpers
             return "application/x-7z-compressed";
         }
         
-        if (extension.Equals("pdf", StringComparison.OrdinalIgnoreCase))
+        return extension.Equals("pdf", StringComparison.OrdinalIgnoreCase) ? "application/pdf" : "application/octet-stream";
+    }
+    
+    public static bool VerifyIfFileIsCompressed(string filePath)
+    {
+        if (filePath == null)
         {
-            return "application/pdf";
+            throw new ArgumentNullException(nameof(filePath));
         }
-
-        return "application/octet-stream";
+        
+        var extension = Path.GetExtension(filePath);
+        return extension.Equals(".rar", StringComparison.OrdinalIgnoreCase) || extension.Equals(".cbr", StringComparison.OrdinalIgnoreCase) || extension.Equals(".zip", StringComparison.OrdinalIgnoreCase) || extension.Equals(".cbz", StringComparison.OrdinalIgnoreCase) || extension.Equals(".7z", StringComparison.OrdinalIgnoreCase);
     }
 }

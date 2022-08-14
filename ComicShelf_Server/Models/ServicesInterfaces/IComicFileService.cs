@@ -19,4 +19,6 @@ public interface IComicFileService
     Task SetFileToBeAnalyzedAsync(string filename);
     
     Task SetFileAsAnalyzedAsync(string filename);
+    
+    Task<bool> VerifyFileExistsAsync(string filepath);
 }

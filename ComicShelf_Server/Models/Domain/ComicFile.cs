@@ -27,6 +27,8 @@ public class ComicFile
     
     public Guid LibraryId { get; set; }
     
+    public Guid LibraryFolderId { get; set; }
+    
     public bool Analysed { get; set; }
     
     public bool HasComicInfoFile { get; set; }
