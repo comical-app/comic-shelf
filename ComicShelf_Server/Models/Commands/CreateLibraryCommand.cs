@@ -8,8 +8,8 @@ public class CreateLibraryCommand
     [MaxLength(30)]
     public string Name { get; set; }
     
-    [Required(ErrorMessage = "Path is required")]
-    public string Path { get; set; }
+    [Required(ErrorMessage = "Folder path are required")]
+    public IEnumerable<string> FoldersPath { get; set; }
     
     public IEnumerable<string> AcceptedExtensions { get; set; }
 }

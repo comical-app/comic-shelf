@@ -138,4 +138,22 @@ public class ComicFileService : IComicFileService
             throw;
         }
     }
+
+    public async Task<bool> VerifyFileExistsAsync(string filepath)
+    {
+        try
+        {
+            if (!File.Exists(filepath))
+            {
+                return await Task.FromResult(false);
+            }
+
+            return await Task.FromResult(true);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Faield to verify file exists \"{Filename}\". {EMessage}", filepath, e.Message);
+            throw;
+        }
+    }
 }

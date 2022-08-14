@@ -65,7 +65,7 @@ public class LibraryService : ILibraryService
         {
             if (string.IsNullOrWhiteSpace(libraryPath)) throw new ArgumentException("Path cannot be empty");
 
-            return await _libraryRepository.CheckLibraryPathIsUniqueAsync(libraryPath);
+            return await _libraryRepository.CheckLibraryFolderPathIsUniqueAsync(libraryPath.Trim());
         }
         catch (Exception e)
         {
@@ -80,14 +80,20 @@ public class LibraryService : ILibraryService
         try
         {
             if (string.IsNullOrWhiteSpace(command.Name)) throw new Exception("Name cannot be empty");
-            if (string.IsNullOrWhiteSpace(command.Path)) throw new Exception("Path cannot be empty");
             if (!await CheckLibraryNameIsUniqueAsync(command.Name)) throw new Exception("Name already exists");
-            if (!await CheckLibraryPathIsUniqueAsync(command.Path)) throw new Exception("Path already used");
+
+            var folderExists = false;
+            foreach (var folder in command.FoldersPath)
+            {
+                if (!await CheckLibraryPathIsUniqueAsync(folder)) folderExists = true;
+            }
+            
+            if(folderExists) throw new Exception("Path already used");
 
             var newLibrary = new Library
             {
                 Name = command.Name,
-                Path = command.Path,
+                Folders = command.FoldersPath.Select(x => new LibraryFolder {Path = x.Trim(), IsActive = true}).ToList(),
                 AcceptedExtensions = string.Join(",", command.AcceptedExtensions)
             };
 
@@ -96,7 +102,7 @@ public class LibraryService : ILibraryService
         catch (Exception e)
         {
             _logger.LogError(e, "Faield to create library {LibraryName} at {LibraryPath}. {EMessage}", command.Name,
-                command.Path, e.Message);
+                command.FoldersPath, e.Message);
             throw;
         }
     }
@@ -117,15 +123,8 @@ public class LibraryService : ILibraryService
                     throw new ArgumentException("Name already exists");
             }
 
-            if (command.Path != libraryToEdit.Path)
-            {
-                if (string.IsNullOrWhiteSpace(command.Path)) throw new ArgumentException("Path cannot be empty");
-                if (!await CheckLibraryPathIsUniqueAsync(command.Name))
-                    throw new ArgumentException("Path already used");
-            }
-
             libraryToEdit.Name = command.Name.Trim();
-            libraryToEdit.Path = command.Path;
+            libraryToEdit.Folders = command.FoldersPath.Select(x => new LibraryFolder {Path = x.Trim()}).ToList();
             libraryToEdit.AcceptedExtensions = string.Join(",", command.AcceptedExtensions);
 
             return await _libraryRepository.UpdateLibraryAsync(libraryToEdit);

@@ -21,7 +21,7 @@ public class LibraryRepository : ILibraryRepository
 
     public async Task<Library?> GetLibraryByIdAsync(Guid libraryId)
     {
-        var library = await _context.Libraries.AsNoTracking().FirstOrDefaultAsync(x => x.Id == libraryId);
+        var library = await _context.Libraries.Include(x => x.Folders).AsNoTracking().FirstOrDefaultAsync(x => x.Id == libraryId);
         
         return library ?? null;
     }
@@ -33,22 +33,29 @@ public class LibraryRepository : ILibraryRepository
         return library == null;
     }
 
-    public async Task<bool> CheckLibraryPathIsUniqueAsync(string libraryPath)
+    public async Task<bool> CheckLibraryFolderPathIsUniqueAsync(string libraryPath)
     {
-        var library = await _context.Libraries.AsNoTracking().FirstOrDefaultAsync(x => x.Path == libraryPath.Trim());
+        var library = await _context.LibraryFolders.AsNoTracking().FirstOrDefaultAsync(x => x.Path == libraryPath.Trim());
 
         return library == null;
     }
 
     public async Task<Library> CreateLibraryAsync(Library library)
     {
-        library.CreatedAt = DateTime.Now;
-        library.UpdatedAt = DateTime.Now;
-        library.IsActive = true;
-        await _context.Libraries.AddAsync(library);
-        await _context.SaveChangesAsync();
-        
-        return await Task.FromResult(library);
+        try
+        {
+            library.CreatedAt = DateTime.Now;
+            library.UpdatedAt = DateTime.Now;
+            library.IsActive = true;
+            await _context.Libraries.AddAsync(library);
+            await _context.SaveChangesAsync();
+
+            return await Task.FromResult(library);
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
     }
 
     public async Task<bool> UpdateLibraryAsync(Library library)
@@ -63,6 +70,22 @@ public class LibraryRepository : ILibraryRepository
     public async Task<bool> DeleteLibraryAsync(Library library)
     {
         _context.Libraries.Remove(library);
+        await _context.SaveChangesAsync();
+        
+        return await Task.FromResult(true);
+    }
+
+    public async Task<bool> UpdateLibraryFolderAsync(LibraryFolder libraryFolder)
+    {
+        _context.LibraryFolders.Update(libraryFolder);
+        await _context.SaveChangesAsync();
+        
+        return await Task.FromResult(true);
+    }
+
+    public async Task<bool> DeleteLibraryFolderAsync(LibraryFolder libraryFolder)
+    {
+        _context.LibraryFolders.Remove(libraryFolder);
         await _context.SaveChangesAsync();
         
         return await Task.FromResult(true);

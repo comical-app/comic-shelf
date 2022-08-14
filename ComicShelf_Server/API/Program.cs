@@ -1,8 +1,7 @@
+using API.Extensions;
 using Infra.Context;
 using Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using Models.Domain;
 using Models.RepositoryInterfaces;
 using Models.ServicesInterfaces;
 using Services;
@@ -13,30 +12,26 @@ const string serviceName = "ComicShelf";
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = serviceName, Version = "v1" });
-
-    var filePath = Path.Combine(AppContext.BaseDirectory, "Api.xml");
-    c.IncludeXmlComments(filePath);
-});
+builder.Services.AddSwaggerGen(SwaggerDocumentationConfig.Config);
 builder.Services.AddDbContext<DatabaseContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DatabaseContext")));
-builder.Services.Configure<LibrariesConfig>(builder.Configuration.GetSection("LibrariesConfig"));
+// Repositories
 builder.Services.AddTransient<IComicFileRepository, ComicFileRepository>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
 builder.Services.AddTransient<ILibraryRepository, LibraryRepository>();
+// Services
 builder.Services.AddTransient<IComicFileService, ComicFileService>();
-builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IComicInfoService, ComicInfoService>();
+builder.Services.AddTransient<IJwtTokenService, JwtTokenService>();
 builder.Services.AddTransient<ILibraryService, LibraryService>();
+builder.Services.AddTransient<IUserService, UserService>();
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-    context.Database.Migrate();
+    await context.Database.MigrateAsync();
 }
 
 // Configure the HTTP request pipeline.
@@ -52,4 +47,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

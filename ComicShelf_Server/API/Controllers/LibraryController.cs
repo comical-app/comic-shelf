@@ -1,8 +1,8 @@
-using Infra.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Models.Commands;
 using Models.Domain;
 using Models.ServicesInterfaces;
+using Services.Helpers;
 
 namespace API.Controllers;
 
@@ -10,16 +10,18 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class LibraryController : ControllerBase
 {
-    private readonly IComicFileService _comicFileService;
-    private readonly ILibraryService _libraryService;
     private readonly ILogger<LibraryController> _logger;
+    private readonly IComicFileService _comicFileService;
+    private readonly IComicInfoService _comicInfoService;
+    private readonly ILibraryService _libraryService;
 
     public LibraryController(IComicFileService comicFileService,
-        ILogger<LibraryController> logger, ILibraryService libraryService)
+        ILogger<LibraryController> logger, ILibraryService libraryService, IComicInfoService comicInfoService)
     {
         _comicFileService = comicFileService;
         _logger = logger;
         _libraryService = libraryService;
+        _comicInfoService = comicInfoService;
     }
 
     /// <summary>
@@ -38,7 +40,7 @@ public class LibraryController : ControllerBase
 
         return Ok(libraries);
     }
-    
+
     /// <summary>
     /// Find library by id
     /// </summary>
@@ -57,7 +59,7 @@ public class LibraryController : ControllerBase
 
         return Ok(library);
     }
-    
+
     /// <summary>
     /// Return all files from library
     /// </summary>
@@ -70,7 +72,7 @@ public class LibraryController : ControllerBase
     public async Task<IActionResult> GetFilesByLibraryId(Guid libraryId)
     {
         var library = await _libraryService.GetLibraryByIdAsync(libraryId);
-        
+
         if (library == null)
             return NotFound();
 
@@ -97,7 +99,8 @@ public class LibraryController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to check if library with name \"{LibraryName}\" exists. {EMessage}", libraryName, e.Message);
+            _logger.LogError(e, "Failed to check if library with name \"{LibraryName}\" exists. {EMessage}",
+                libraryName, e.Message);
             return BadRequest($"Failed to check if library with name \"{libraryName}\" exists.");
         }
     }
@@ -120,7 +123,8 @@ public class LibraryController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to check if library with path \"{LibraryPath}\" exists. {EMessage}", libraryPath, e.Message);
+            _logger.LogError(e, "Failed to check if library with path \"{LibraryPath}\" exists. {EMessage}",
+                libraryPath, e.Message);
             return BadRequest($"Failed to check if library with path \"{libraryPath}\" exists.");
         }
     }
@@ -232,36 +236,44 @@ public class LibraryController : ControllerBase
         try
         {
             var library = await _libraryService.GetLibraryByIdAsync(libraryId);
-        
+
             if (library == null)
                 return NotFound();
-            
+
             await _libraryService.UpdateLastScanDate(libraryId);
-            
+
             var newFilesCount = 0;
-            var sourceDirectory = library.Path;
-            var searchPatterns = library.AcceptedExtensions.Select(x => $"*.{x}");
-
-            var enumerateFiles = searchPatterns.AsParallel().SelectMany(searchPattern =>
-                Directory.EnumerateFiles(sourceDirectory, searchPattern, SearchOption.AllDirectories));
-
-            foreach (var currentFile in enumerateFiles)
+            var directoryFolders = library.Folders;
+            foreach (var sourceDirectory in directoryFolders)
             {
-                var file = new ComicFile();
-                var fileInfo = new FileInfo(currentFile);
+                var extensions = library.AcceptedExtensions.Split(',');
+                var searchPatterns = extensions.Select(x => $"*.{x}");
 
-                file.Name = fileInfo.Name;
-                file.Path = fileInfo.DirectoryName ?? string.Empty;
-                file.Extension = Path.GetExtension(currentFile);
-                file.MimeType = FileHelpers.GetMimeTypeFromExtension(file.Extension);
-                file.Size = fileInfo.Length;
-                file.UpdatedAt = fileInfo.LastWriteTime;
-                file.LibraryId = library.Id;
+                var enumerateFiles = searchPatterns.AsParallel().SelectMany(searchPattern =>
+                    Directory.EnumerateFiles(sourceDirectory.Path, searchPattern, SearchOption.AllDirectories));
 
-                if (await _comicFileService.GetFileByNameAsync(file.Name) != null) await _comicFileService.SetFileToBeAnalyzedAsync(file.Name);
+                foreach (var currentFile in enumerateFiles)
+                {
+                    var file = new ComicFile();
+                    var fileInfo = new FileInfo(currentFile);
 
-                await _comicFileService.SaveFileAsync(file);
-                newFilesCount++;
+                    file.Name = fileInfo.Name;
+                    file.Path = fileInfo.DirectoryName ?? string.Empty;
+                    file.Extension = Path.GetExtension(currentFile);
+                    file.MimeType = FileHelpers.GetMimeTypeFromExtension(file.Extension);
+                    file.Size = fileInfo.Length;
+                    file.UpdatedAt = fileInfo.LastWriteTime;
+                    file.LibraryId = library.Id;
+                    file.LibraryFolderId = sourceDirectory.Id;
+
+                    var comicInfo = await _comicInfoService.ExtractComicInfoAsync(fileInfo.FullName);
+
+                    if (await _comicFileService.GetFileByNameAsync(file.Name) != null)
+                        await _comicFileService.SetFileToBeAnalyzedAsync(file.Name);
+
+                    await _comicFileService.SaveFileAsync(file);
+                    newFilesCount++;
+                }
             }
 
             return Ok(newFilesCount == 0 ? "No new file added" : $"{newFilesCount} new files added");

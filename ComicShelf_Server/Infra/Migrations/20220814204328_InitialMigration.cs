@@ -15,7 +15,6 @@ namespace Infra.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    Path = table.Column<string>(type: "TEXT", nullable: false),
                     LastScan = table.Column<DateTime>(type: "TEXT", nullable: false),
                     AcceptedExtensions = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -59,6 +58,7 @@ namespace Infra.Migrations
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LibraryId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    LibraryFolderId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Analysed = table.Column<bool>(type: "INTEGER", nullable: false),
                     HasComicInfoFile = table.Column<bool>(type: "INTEGER", nullable: false),
                     Scraped = table.Column<bool>(type: "INTEGER", nullable: false)
@@ -74,9 +74,35 @@ namespace Infra.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "LibraryFolders",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    LibraryId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Path = table.Column<string>(type: "TEXT", nullable: false),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    LastScanAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LibraryFolders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LibraryFolders_Library_LibraryId",
+                        column: x => x.LibraryId,
+                        principalTable: "Library",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_ComicFile_LibraryId",
                 table: "ComicFile",
+                column: "LibraryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LibraryFolders_LibraryId",
+                table: "LibraryFolders",
                 column: "LibraryId");
         }
 
@@ -84,6 +110,9 @@ namespace Infra.Migrations
         {
             migrationBuilder.DropTable(
                 name: "ComicFile");
+
+            migrationBuilder.DropTable(
+                name: "LibraryFolders");
 
             migrationBuilder.DropTable(
                 name: "User");

@@ -13,9 +13,6 @@ public class Library
     [StringLength(50)]
     public string Name { get; set; }
     
-    [Required]
-    public string Path { get; set; }
-    
     public DateTime LastScan { get; set; }
     
     public string AcceptedExtensions { get; set; }
@@ -26,5 +23,7 @@ public class Library
     
     public bool IsActive { get; set; }
     
+    public IEnumerable<LibraryFolder> Folders { get; set; }
+
     public IEnumerable<ComicFile> Files { get; set; }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Infra.Context;
@@ -36,7 +37,7 @@ public class LibraryRepositoryTests
             var library1 = new Library
             {
                 Name = "Library 1",
-                Path = @"C:\Library 1",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Library 1"}},
                 AcceptedExtensions = "zip, rar",
                 LastScan = DateTime.Now
             };
@@ -45,7 +46,7 @@ public class LibraryRepositoryTests
             var library2 = new Library
             {
                 Name = "Library 2",
-                Path = @"C:\Library 2",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Library 2"}},
                 AcceptedExtensions = "cbz",
                 LastScan = DateTime.Now
             };
@@ -104,7 +105,7 @@ public class LibraryRepositoryTests
             {
                 Id = _libraryId,
                 Name = _libraryName,
-                Path = _libraryPath,
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = _libraryPath}},
                 LastScan = _lastScanDateTime,
                 AcceptedExtensions = _acceptedExtensions
             };
@@ -121,7 +122,7 @@ public class LibraryRepositoryTests
             {
                 result.Id.Should().Be(_libraryId);
                 result.Name.Should().Be(_libraryName);
-                result.Path.Should().Be(_libraryPath);
+                result.Folders.Should().Contain(x => x.Path == _libraryPath);
                 result.LastScan.Should().Be(_lastScanDateTime);
                 result.AcceptedExtensions.Should().Be(_acceptedExtensions);
             }
@@ -162,7 +163,7 @@ public class LibraryRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 Name = "Comic Book Library",
-                Path = @"C:\Comics",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
@@ -172,7 +173,7 @@ public class LibraryRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 Name = "LibraryRegular",
-                Path = @"C:\Library regular",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Library Regular"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "cbz"
             };
@@ -244,7 +245,7 @@ public class LibraryRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 Name = "Comic Book Library",
-                Path = @"C:\Comics",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
@@ -254,7 +255,7 @@ public class LibraryRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 Name = "LibraryRegular",
-                Path = @"C:\Library regular",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "cbz"
             };
@@ -267,7 +268,7 @@ public class LibraryRepositoryTests
         public async Task Should_return_false_when_path_exists()
         {
             // Act
-            var result = await _libraryRepository.CheckLibraryPathIsUniqueAsync(@"C:\Library regular");
+            var result = await _libraryRepository.CheckLibraryFolderPathIsUniqueAsync(@"C:\Library regular");
 
             // Assert
             result.Should().BeFalse();
@@ -277,7 +278,7 @@ public class LibraryRepositoryTests
         public async Task Should_return_true_when_path_does_not_exist()
         {
             // Act
-            var result = await _libraryRepository.CheckLibraryPathIsUniqueAsync(@"D:\Library regular");
+            var result = await _libraryRepository.CheckLibraryFolderPathIsUniqueAsync(@"D:\Library regular");
 
             // Assert
             result.Should().BeTrue();
@@ -287,7 +288,7 @@ public class LibraryRepositoryTests
         public async Task Should_throw_exception_when_path_is_empty()
         {
             // Act
-            Func<Task> action = async () => await _libraryRepository.CheckLibraryPathIsUniqueAsync(string.Empty);
+            Func<Task> action = async () => await _libraryRepository.CheckLibraryFolderPathIsUniqueAsync(string.Empty);
 
             // Assert
             await action.Should().ThrowAsync<ArgumentException>();
@@ -297,7 +298,7 @@ public class LibraryRepositoryTests
         public async Task Should_throw_exception_when_path_is_whitespace()
         {
             // Act
-            Func<Task> action = async () => await _libraryRepository.CheckLibraryPathIsUniqueAsync(" ");
+            Func<Task> action = async () => await _libraryRepository.CheckLibraryFolderPathIsUniqueAsync(" ");
 
             // Assert
             await action.Should().ThrowAsync<ArgumentException>();
@@ -330,10 +331,10 @@ public class LibraryRepositoryTests
         public async Task Should_create_library()
         {
             // Arrange
-            var newLibrary = new Library()
+            var newLibrary = new Library
             {
                 Name = "Comic Book Library",
-                Path = @"C:\Comics",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics"}},
                 AcceptedExtensions = "7z"
             };
 
@@ -347,7 +348,7 @@ public class LibraryRepositoryTests
             {
                 result.Id.Should().Be(library.Id);
                 result.Name.Should().Be(newLibrary.Name);
-                result.Path.Should().Be(newLibrary.Path);
+                result.Folders.Should().Contain(x => x.Path == @"C:\Comics");
                 result.AcceptedExtensions.Should().Be(string.Join(",", newLibrary.AcceptedExtensions));
             }
         }
@@ -360,7 +361,7 @@ public class LibraryRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 Name = "Comic Book Library",
-                Path = @"C:\Comics",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
@@ -370,7 +371,7 @@ public class LibraryRepositoryTests
             var newLibrary = new Library
             {
                 Name = library.Name,
-                Path = library.Path,
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = library.Folders.FirstOrDefault()!.Path}},
                 AcceptedExtensions = "7z"
             };
 
@@ -424,7 +425,7 @@ public class LibraryRepositoryTests
             {
                 Id = _libraryId,
                 Name = "Comic Book Library",
-                Path = @"C:\Comics",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
@@ -432,10 +433,10 @@ public class LibraryRepositoryTests
 
             await _dbContext.SaveChangesAsync();
 
-            var library = new Library()
+            var library = new Library
             {
                 Name = "My Comic Library",
-                Path = @"C:\Comics folder",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics folder"}},
                 AcceptedExtensions = "7z"
             };
 
@@ -449,7 +450,7 @@ public class LibraryRepositoryTests
             {
                 result.Id.Should().Be(_libraryId);
                 result.Name.Should().Be("My Comic Library");
-                result.Path.Should().Be(@"C:\Comics folder");
+                result.Folders.Should().Contain(x => x.Path == @"C:\Comics folder");
                 result.AcceptedExtensions.Should().Be("7z");
             }
         }
@@ -471,7 +472,7 @@ public class LibraryRepositoryTests
             var library = new Library
             {
                 Name = "My Comic Library",
-                Path = @"C:\Comics folder",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Comics folder"}},
                 AcceptedExtensions = "7z"
             };
 
@@ -511,7 +512,7 @@ public class LibraryRepositoryTests
             {
                 Id = _libraryId,
                 Name = "Test Library",
-                Path = @"C:\Test Library",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Test library"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
@@ -539,7 +540,7 @@ public class LibraryRepositoryTests
             {
                 Id = Guid.NewGuid(),
                 Name = "Test Library",
-                Path = @"C:\Test Library",
+                Folders = new []{new LibraryFolder {Id = Guid.NewGuid(), Path = @"C:\Test Library"}},
                 LastScan = DateTime.Now,
                 AcceptedExtensions = "rar, zip"
             };
